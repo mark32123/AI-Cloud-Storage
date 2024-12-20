@@ -1,11 +1,9 @@
 package net.xdclass.config;
 
-import io.minio.MinioClient;
 import lombok.Data;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 /**
@@ -36,11 +34,11 @@ public class MinioConfig {
     //预签名的URL过期时间 ms 毫秒
     private Long PRE_SING_URL_EXPIRE_TIME = 60 * 10 * 1000L;
 
-
-    @Bean
-    public MinioClient getMinIoClient(){
-        return MinioClient.builder().endpoint(endpoint).credentials(accessKey, accessSecret).build();
-    }
+//
+//    @Bean
+//    public MinioClient getMinIoClient(){
+//        return MinioClient.builder().endpoint(endpoint).credentials(accessKey, accessSecret).build();
+//    }
 
 
 }

@@ -31,8 +31,8 @@ public class TestController {
     @Autowired
     private MinioConfig minioConfig;
 
-    @Autowired
-    private MinioClient minioClient;
+//    @Autowired
+//    private MinioClient minioClient;
 
     @PostMapping("upload")
     public JsonData testUpload(@RequestParam("file") MultipartFile file){
@@ -43,10 +43,10 @@ public class TestController {
         try {
             InputStream inputStream = file.getInputStream();
 
-            minioClient.putObject(PutObjectArgs.builder().bucket(minioConfig.getBucketName())
-                    .object(filename)
-                    .stream(inputStream, inputStream.available(), -1)
-                    .build());
+//            minioClient.putObject(PutObjectArgs.builder().bucket(minioConfig.getBucketName())
+//                    .object(filename)
+//                    .stream(inputStream, inputStream.available(), -1)
+//                    .build());
 
         } catch (Exception e) {
             e.printStackTrace();
