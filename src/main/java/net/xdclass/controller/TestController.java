@@ -1,7 +1,6 @@
 package net.xdclass.controller;
 
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
+
 import jakarta.validation.constraints.Min;
 import net.xdclass.config.MinioConfig;
 import net.xdclass.util.CommonUtil;
