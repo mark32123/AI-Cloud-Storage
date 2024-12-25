@@ -1,8 +1,12 @@
 package net.xdclass.controller;
 
+import net.xdclass.controller.req.AccountLoginReq;
 import net.xdclass.controller.req.AccountRegisterReq;
+import net.xdclass.dto.AccountDTO;
+import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.service.AccountService;
 import net.xdclass.util.JsonData;
+import net.xdclass.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,6 +48,19 @@ public class AccountController {
     }
 
 
+    /**
+     * 登录模块
+     */
+    @PostMapping("login")
+    public JsonData login(@RequestBody AccountLoginReq req){
+
+        AccountDTO accountDTO = accountService.login(req);
+
+        //生成token jwt ssm  一般前端存储在localStorage里面，或 sessionStorage里面
+        String token = JwtUtil.geneLoginJWT(accountDTO);
+
+        return JsonData.buildSuccess(token);
+    }
 
 
 
