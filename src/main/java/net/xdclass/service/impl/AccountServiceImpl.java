@@ -1,19 +1,29 @@
 package net.xdclass.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import net.xdclass.component.StoreEngine;
 import net.xdclass.config.AccountConfig;
+import net.xdclass.config.MinioConfig;
 import net.xdclass.controller.req.AccountRegisterReq;
+import net.xdclass.controller.req.FolderCreateReq;
 import net.xdclass.enums.AccountRoleEnum;
 import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.exception.BizException;
 import net.xdclass.mapper.AccountMapper;
+import net.xdclass.mapper.StorageMapper;
 import net.xdclass.model.AccountDO;
+import net.xdclass.model.StorageDO;
+import net.xdclass.service.AccountFileService;
 import net.xdclass.service.AccountService;
+import net.xdclass.util.CommonUtil;
 import net.xdclass.util.SpringBeanUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -32,6 +42,18 @@ public class AccountServiceImpl implements AccountService {
     @Autowired
     private AccountMapper accountMapper;
 
+    @Autowired
+    private StoreEngine fileStoreEngine;
+
+    @Autowired
+    private MinioConfig minioConfig;
+
+    @Autowired
+    private AccountFileService accountFileService;
+
+    @Autowired
+    private StorageMapper storageMapper;
+
     /**
      * 1、查询手机号是否重复
      * 2、加密密码
@@ -40,6 +62,7 @@ public class AccountServiceImpl implements AccountService {
      * @param req
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void register(AccountRegisterReq req) {
 
         //1、查询手机号是否重复
@@ -56,8 +79,29 @@ public class AccountServiceImpl implements AccountService {
         accountDO.setRole(AccountRoleEnum.COMMON.name());
         accountMapper.insert(accountDO);
 
-        //其他操作 TODO
+        //创建默认的存储空间
+        StorageDO storageDO = new StorageDO();
+        storageDO.setAccountId(accountDO.getId());
+        storageDO.setUsedSize(0L);
+        storageDO.setTotalSize(AccountConfig.DEFAULT_STORAGE_SIZE);
+        storageMapper.insert(storageDO);
+
+        //初始化根目录
+        FolderCreateReq createRootFolderReq = FolderCreateReq.builder()
+                .accountId(accountDO.getId())
+                .parentId(AccountConfig.ROOT_PARENT_ID)
+                .folderName(AccountConfig.ROOT_FOLDER_NAME)
+                .build();
+
+        accountFileService.createFolder(createRootFolderReq);
 
 
+    }
+
+    @Override
+    public String uploadAvatar(MultipartFile file) {
+        String filename = CommonUtil.getFilePath(file.getOriginalFilename());
+        fileStoreEngine.upload(minioConfig.getAvatarBucketName(), filename, file);
+        return minioConfig.getEndpoint()+"/"+minioConfig.getAvatarBucketName()+"/"+filename;
     }
 }
