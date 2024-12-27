@@ -164,7 +164,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      * @param accountFileDTO
      */
     private void checkParentFileId(AccountFileDTO accountFileDTO) {
-        if(accountFileDTO.getParentId()!=null){
+        if(accountFileDTO.getParentId()!=0){
             AccountFileDO accountFileDO = accountFileMapper.selectOne(
                     new QueryWrapper<AccountFileDO>()
                             .eq("id", accountFileDTO.getParentId())
