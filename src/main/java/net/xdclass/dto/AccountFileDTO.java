@@ -2,6 +2,7 @@ package net.xdclass.dto;
 
 import com.baomidou.mybatisplus.annotation.*;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,6 +20,7 @@ import java.util.Date;
 @Getter
 @Setter
 @Schema(name = "AccountFileDO", description = "用户文件表")
+@Builder
 public class AccountFileDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;

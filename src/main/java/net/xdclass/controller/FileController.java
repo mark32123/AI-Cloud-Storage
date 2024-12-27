@@ -1,14 +1,12 @@
 package net.xdclass.controller;
 
+import net.xdclass.controller.req.FolderCreateReq;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.interceptor.LoginInterceptor;
 import net.xdclass.service.FileService;
 import net.xdclass.util.JsonData;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -38,5 +36,16 @@ public class FileController {
         return JsonData.buildSuccess(list);
     }
 
+
+    /**
+     * 创建文件夹
+     */
+    @PostMapping("create_folder")
+    public JsonData createFolder(@RequestBody FolderCreateReq req){
+        Long accountId = LoginInterceptor.threadLocal.get().getId();
+        req.setAccountId(accountId);
+        fileService.createFolder(req);
+        return JsonData.buildSuccess();
+    }
 
 }

@@ -2,7 +2,9 @@ package net.xdclass.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
+import net.xdclass.controller.req.FolderCreateReq;
 import net.xdclass.dto.AccountFileDTO;
+import net.xdclass.enums.FolderFlagEnum;
 import net.xdclass.mapper.AccountFileMapper;
 import net.xdclass.model.AccountFileDO;
 import net.xdclass.service.FileService;
@@ -43,5 +45,26 @@ public class FileServiceImpl implements FileService {
         );
 
         return SpringBeanUtil.copyProperties(accountFileDOList, AccountFileDTO.class);
+    }
+
+    /**
+     * 创建文件夹
+     * @param req
+     */
+    @Override
+    public Long createFolder(FolderCreateReq req) {
+
+        AccountFileDTO accountFileDTO = AccountFileDTO.builder().accountId(req.getAccountId())
+                .parentId(req.getParentId())
+                .fileName(req.getFolderName())
+                .isDir(FolderFlagEnum.YES.getCode())
+                .build();
+
+       return saveAccountFile(accountFileDTO);
+
+    }
+
+    private Long saveAccountFile(AccountFileDTO accountFileDTO) {
+        return null;
     }
 }
