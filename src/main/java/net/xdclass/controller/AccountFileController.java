@@ -1,9 +1,10 @@
 package net.xdclass.controller;
 
+import net.xdclass.controller.req.FileUpdateReq;
 import net.xdclass.controller.req.FolderCreateReq;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.interceptor.LoginInterceptor;
-import net.xdclass.service.FileService;
+import net.xdclass.service.AccountFileService;
 import net.xdclass.util.JsonData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,10 +21,10 @@ import java.util.List;
  **/
 @RestController
 @RequestMapping("/api/file/v1")
-public class FileController {
+public class AccountFileController {
 
     @Autowired
-    private FileService fileService;
+    private AccountFileService accountFileService;
 
 
     /**
@@ -32,7 +33,7 @@ public class FileController {
     @GetMapping("list")
     public JsonData list(@RequestParam(value = "parent_id")Long parentId){
         Long accountId = LoginInterceptor.threadLocal.get().getId();
-        List<AccountFileDTO> list = fileService.listFile(accountId,parentId);
+        List<AccountFileDTO> list = accountFileService.listFile(accountId,parentId);
         return JsonData.buildSuccess(list);
     }
 
@@ -44,8 +45,22 @@ public class FileController {
     public JsonData createFolder(@RequestBody FolderCreateReq req){
         Long accountId = LoginInterceptor.threadLocal.get().getId();
         req.setAccountId(accountId);
-        fileService.createFolder(req);
+        accountFileService.createFolder(req);
         return JsonData.buildSuccess();
     }
+
+
+    /**
+     * 文件重命名
+     */
+    @PostMapping("rename_file")
+    public JsonData renameFile(@RequestBody FileUpdateReq req){
+        Long accountId = LoginInterceptor.threadLocal.get().getId();
+        req.setAccountId(accountId);
+        accountFileService.renameFile(req);
+        return JsonData.buildSuccess();
+    }
+
+
 
 }

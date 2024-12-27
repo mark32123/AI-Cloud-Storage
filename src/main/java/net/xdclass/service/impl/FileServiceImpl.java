@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.xdclass.controller.req.FolderCreateReq;
 import net.xdclass.dto.AccountFileDTO;
+import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.enums.FolderFlagEnum;
+import net.xdclass.exception.BizException;
 import net.xdclass.mapper.AccountFileMapper;
 import net.xdclass.model.AccountFileDO;
 import net.xdclass.service.FileService;
@@ -12,6 +14,7 @@ import net.xdclass.util.SpringBeanUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.swing.*;
 import java.util.List;
 
 /**
@@ -26,45 +29,4 @@ import java.util.List;
 @Slf4j
 public class FileServiceImpl implements FileService {
 
-    @Autowired
-    private AccountFileMapper accountFileMapper;
-
-    /**
-     * 获取文件列表接口
-     * @param accountId
-     * @param parentId
-     * @return
-     */
-    @Override
-    public List<AccountFileDTO> listFile(Long accountId, Long parentId) {
-
-        List<AccountFileDO> accountFileDOList = accountFileMapper.selectList(new QueryWrapper<AccountFileDO>()
-                .eq("account_id", accountId).eq("parent_id", parentId)
-                .orderByDesc("is_dir")
-                .orderByDesc("gmt_create")
-        );
-
-        return SpringBeanUtil.copyProperties(accountFileDOList, AccountFileDTO.class);
-    }
-
-    /**
-     * 创建文件夹
-     * @param req
-     */
-    @Override
-    public Long createFolder(FolderCreateReq req) {
-
-        AccountFileDTO accountFileDTO = AccountFileDTO.builder().accountId(req.getAccountId())
-                .parentId(req.getParentId())
-                .fileName(req.getFolderName())
-                .isDir(FolderFlagEnum.YES.getCode())
-                .build();
-
-       return saveAccountFile(accountFileDTO);
-
-    }
-
-    private Long saveAccountFile(AccountFileDTO accountFileDTO) {
-        return null;
-    }
 }
