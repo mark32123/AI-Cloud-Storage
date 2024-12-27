@@ -135,7 +135,7 @@ public class AccountServiceImpl implements AccountService {
         StorageDO storageDO = storageMapper.selectOne(new QueryWrapper<StorageDO>().eq("account_id", id));
         accountDTO.setStorageDTO(SpringBeanUtil.copyProperties(storageDO, StorageDTO.class));
 
-        //获取文件信息
+        //获取根文件信息
         AccountFileDO accountFileDO = accountFileMapper.selectOne(new QueryWrapper<AccountFileDO>()
                 .eq("account_id", id).eq("parent_id", AccountConfig.ROOT_PARENT_ID));
         accountDTO.setRootFileId(accountFileDO.getId());
