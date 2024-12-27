@@ -1,5 +1,6 @@
 package net.xdclass.service.impl;
 
+import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.xdclass.controller.req.FileUpdateReq;
@@ -148,11 +149,11 @@ public class AccountFileServiceImpl implements AccountFileService {
         if(selectCount>0){
             //处理重复文件夹
             if(Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())){
-                accountFileDO.setFileName(accountFileDO.getFileName()+"(1)");
+                accountFileDO.setFileName(accountFileDO.getFileName()+"_"+System.currentTimeMillis());
             }else {
                 //处理重复文件名,提取文件拓展名
                 String[] split = accountFileDO.getFileName().split("\\.");
-                accountFileDO.setFileName(split[0]+"(1)."+split[1]);
+                accountFileDO.setFileName(split[0]+"_"+System.currentTimeMillis()+"."+split[1]);
             }
         }
 
