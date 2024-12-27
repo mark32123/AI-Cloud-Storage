@@ -47,4 +47,19 @@ public class AccountDTO implements Serializable {
 
     @Schema(description = "更新时间")
     private Date gmtModified;
+
+
+    /**
+     * 根文件夹ID
+     */
+    private Long rootFileId;
+    /**
+     * 根文件夹名称
+     */
+    private String rootFileName;
+
+    /**
+     * 存储信息
+     */
+    private StorageDTO storageDTO;
 }

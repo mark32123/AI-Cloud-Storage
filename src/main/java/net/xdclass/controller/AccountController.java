@@ -4,6 +4,7 @@ import net.xdclass.controller.req.AccountLoginReq;
 import net.xdclass.controller.req.AccountRegisterReq;
 import net.xdclass.dto.AccountDTO;
 import net.xdclass.enums.BizCodeEnum;
+import net.xdclass.interceptor.LoginInterceptor;
 import net.xdclass.service.AccountService;
 import net.xdclass.util.JsonData;
 import net.xdclass.util.JwtUtil;
@@ -62,6 +63,17 @@ public class AccountController {
         return JsonData.buildSuccess(token);
     }
 
+
+    /**
+     * 获取用户详情接口
+     */
+    @GetMapping("detail")
+    public JsonData detail(){
+
+        AccountDTO accountDTO = accountService.queryDetail(LoginInterceptor.threadLocal.get().getId());
+
+        return JsonData.buildSuccess(accountDTO);
+    }
 
 
 

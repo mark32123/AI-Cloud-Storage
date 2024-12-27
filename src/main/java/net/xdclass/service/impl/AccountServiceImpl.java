@@ -10,12 +10,15 @@ import net.xdclass.controller.req.AccountLoginReq;
 import net.xdclass.controller.req.AccountRegisterReq;
 import net.xdclass.controller.req.FolderCreateReq;
 import net.xdclass.dto.AccountDTO;
+import net.xdclass.dto.StorageDTO;
 import net.xdclass.enums.AccountRoleEnum;
 import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.exception.BizException;
+import net.xdclass.mapper.AccountFileMapper;
 import net.xdclass.mapper.AccountMapper;
 import net.xdclass.mapper.StorageMapper;
 import net.xdclass.model.AccountDO;
+import net.xdclass.model.AccountFileDO;
 import net.xdclass.model.StorageDO;
 import net.xdclass.service.AccountFileService;
 import net.xdclass.service.AccountService;
@@ -55,6 +58,8 @@ public class AccountServiceImpl implements AccountService {
 
     @Autowired
     private StorageMapper storageMapper;
+    @Autowired
+    private AccountFileMapper accountFileMapper;
 
     /**
      * 1、查询手机号是否重复
@@ -117,5 +122,25 @@ public class AccountServiceImpl implements AccountService {
             throw new BizException(BizCodeEnum.ACCOUNT_PWD_ERROR);
         }
         return SpringBeanUtil.copyProperties(accountDO,AccountDTO.class);
+    }
+
+    @Override
+    public AccountDTO queryDetail(Long id) {
+
+        //账号详情
+        AccountDO accountDO = accountMapper.selectById(id);
+        AccountDTO accountDTO = SpringBeanUtil.copyProperties(accountDO, AccountDTO.class);
+
+        //获取存储信息
+        StorageDO storageDO = storageMapper.selectOne(new QueryWrapper<StorageDO>().eq("account_id", id));
+        accountDTO.setStorageDTO(SpringBeanUtil.copyProperties(storageDO, StorageDTO.class));
+
+        //获取文件信息
+        AccountFileDO accountFileDO = accountFileMapper.selectOne(new QueryWrapper<AccountFileDO>()
+                .eq("account_id", id).eq("parent_id", AccountConfig.ROOT_PARENT_ID));
+        accountDTO.setRootFileId(accountFileDO.getId());
+        accountDTO.setRootFileName(accountFileDO.getFileName());
+
+        return accountDTO;
     }
 }

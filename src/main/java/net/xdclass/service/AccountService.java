@@ -11,4 +11,6 @@ public interface AccountService {
     String uploadAvatar(MultipartFile file);
 
     AccountDTO login(AccountLoginReq req);
+
+    AccountDTO queryDetail(Long id);
 }
