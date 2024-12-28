@@ -3,6 +3,7 @@ package net.xdclass.controller;
 import net.xdclass.controller.req.FileUpdateReq;
 import net.xdclass.controller.req.FolderCreateReq;
 import net.xdclass.dto.AccountFileDTO;
+import net.xdclass.dto.FolderTreeNodeDTO;
 import net.xdclass.interceptor.LoginInterceptor;
 import net.xdclass.service.AccountFileService;
 import net.xdclass.util.JsonData;
@@ -59,6 +60,17 @@ public class AccountFileController {
         req.setAccountId(accountId);
         accountFileService.renameFile(req);
         return JsonData.buildSuccess();
+    }
+
+
+    /**
+     * 文件树接口
+     */
+    @GetMapping("/folder/tree")
+    public JsonData folderTree(){
+        Long accountId = LoginInterceptor.threadLocal.get().getId();
+        List<FolderTreeNodeDTO> list = accountFileService.folderTree(accountId);
+        return JsonData.buildSuccess(list);
     }
 
 

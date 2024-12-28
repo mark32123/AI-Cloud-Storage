@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.xdclass.controller.req.FileUpdateReq;
 import net.xdclass.controller.req.FolderCreateReq;
 import net.xdclass.dto.AccountFileDTO;
+import net.xdclass.dto.FolderTreeNodeDTO;
 import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.enums.FolderFlagEnum;
 import net.xdclass.exception.BizException;
@@ -16,9 +17,10 @@ import net.xdclass.service.AccountFileService;
 import net.xdclass.util.SpringBeanUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 小滴课堂,愿景：让技术不再难学
@@ -105,6 +107,110 @@ public class AccountFileServiceImpl implements AccountFileService {
                 accountFileMapper.updateById(accountFileDO);
             }
         }
+
+    }
+
+    /**
+     * 查询文件树接口 （非递归方式）
+     * 1、查询用户全部文件夹
+     * 2、拼装文件树
+     * @param accountId
+     * @return
+     */
+    @Override
+    public List<FolderTreeNodeDTO> folderTree(Long accountId) {
+        //查询用户全部文件夹
+        List<AccountFileDO> folderList = accountFileMapper.selectList(new QueryWrapper<AccountFileDO>()
+                .eq("account_id", accountId)
+                .eq("is_dir", FolderFlagEnum.YES.getCode())
+        );
+
+        if(CollectionUtils.isEmpty(folderList)){
+            return List.of();
+        }
+        //构建一个map， key是文件ID，value是文件对象 相当于一个数据源
+        Map<Long, FolderTreeNodeDTO> folderMap = folderList.stream()
+                .collect(Collectors.toMap(AccountFileDO::getId, accountFileDO ->
+                FolderTreeNodeDTO.builder()
+                        .id(accountFileDO.getId())
+                        .parentId(accountFileDO.getParentId())
+                        .label(accountFileDO.getFileName())
+                        .children(new ArrayList<>())
+                        .build()
+        ));
+
+        //构建文件树，遍历数据源，为每个文件夹找到子文件夹
+        for (FolderTreeNodeDTO node : folderMap.values()) {
+            Long parentId = node.getParentId();
+
+            if(parentId!=null && folderMap.containsKey(parentId)){
+                //获取父文件
+                FolderTreeNodeDTO parentNode = folderMap.get(parentId);
+                //获取父文件夹的子节点位置
+                List<FolderTreeNodeDTO> children = parentNode.getChildren();
+                //将当前节点添加到对应的文件夹里面
+                children.add(node);
+            }
+
+        }
+
+        //过滤根节点，即parentID是0的
+        List<FolderTreeNodeDTO> rootFolderList = folderMap.values().stream()
+                .filter(node -> Objects.equals(node.getParentId(), 0L))
+                .collect(Collectors.toList());
+
+
+        return rootFolderList;
+
+    }
+
+    /**
+     * 查询文件树接口 （非递归方式）
+     * 1、查询用户全部文件夹
+     * 2、拼装文件树
+     * @param accountId
+     * @return
+     */
+    @Override
+    public List<FolderTreeNodeDTO> folderTreeV2(Long accountId) {
+        //查询用户全部文件夹
+        List<AccountFileDO> folderList = accountFileMapper.selectList(new QueryWrapper<AccountFileDO>()
+                .eq("account_id", accountId)
+                .eq("is_dir", FolderFlagEnum.YES.getCode())
+        );
+
+        if(CollectionUtils.isEmpty(folderList)){
+            return List.of();
+        }
+
+        List<FolderTreeNodeDTO> folderTreeNodeDTOList = folderList.stream().map(file -> {
+            return FolderTreeNodeDTO.builder()
+                    .id(file.getId())
+                    .parentId(file.getParentId())
+                    .label(file.getFileName())
+                    .children(new ArrayList<>())
+                    .build();
+        }).toList();
+
+        //根据父文件ID进行分组，key是当前文件夹ID，value是对应的子文件夹列表，也是数据源
+        Map<Long, List<FolderTreeNodeDTO>> folderMap = folderTreeNodeDTOList
+                .stream().collect(Collectors.groupingBy(FolderTreeNodeDTO::getParentId));
+
+
+        //处理拼装文件树
+        for(FolderTreeNodeDTO node : folderTreeNodeDTOList){
+            List<FolderTreeNodeDTO> children = folderMap.get(node.getId());
+            //判断是否为空
+            if(!CollectionUtils.isEmpty(children)){
+                node.getChildren().addAll(children);
+            }
+        }
+
+        //过滤根节点，即parentID是0的
+        List<FolderTreeNodeDTO> folderTreeNodeDTOS = folderTreeNodeDTOList.stream().filter(node -> Objects.equals(node.getParentId(), 0L))
+                .collect(Collectors.toList());
+
+        return folderTreeNodeDTOS;
 
     }
 

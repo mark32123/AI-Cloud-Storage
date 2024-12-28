@@ -3,6 +3,7 @@ package net.xdclass.service;
 import net.xdclass.controller.req.FileUpdateReq;
 import net.xdclass.controller.req.FolderCreateReq;
 import net.xdclass.dto.AccountFileDTO;
+import net.xdclass.dto.FolderTreeNodeDTO;
 
 import java.util.List;
 
@@ -26,4 +27,20 @@ public interface AccountFileService {
      * @param req
      */
     void renameFile(FileUpdateReq req);
+
+    /**
+     * 文件树接口
+     *
+     * @param accountId
+     * @return
+     */
+    List<FolderTreeNodeDTO> folderTree(Long accountId);
+
+    /**
+     * 文件树接口
+     *
+     * @param accountId
+     * @return
+     */
+     List<FolderTreeNodeDTO> folderTreeV2(Long accountId);
 }
