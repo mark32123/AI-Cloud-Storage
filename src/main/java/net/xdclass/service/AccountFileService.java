@@ -1,6 +1,7 @@
 package net.xdclass.service;
 
 import net.xdclass.controller.req.FileUpdateReq;
+import net.xdclass.controller.req.FileUploadReq;
 import net.xdclass.controller.req.FolderCreateReq;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.FolderTreeNodeDTO;
@@ -43,4 +44,10 @@ public interface AccountFileService {
      * @return
      */
      List<FolderTreeNodeDTO> folderTreeV2(Long accountId);
+
+    /**
+     * 普通小文件上传
+     * @param req
+     */
+    void fileUpload(FileUploadReq req);
 }

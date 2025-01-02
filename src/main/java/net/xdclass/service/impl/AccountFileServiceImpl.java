@@ -3,20 +3,27 @@ package net.xdclass.service.impl;
 import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
+import net.xdclass.component.StoreEngine;
+import net.xdclass.config.MinioConfig;
 import net.xdclass.controller.req.FileUpdateReq;
+import net.xdclass.controller.req.FileUploadReq;
 import net.xdclass.controller.req.FolderCreateReq;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.FolderTreeNodeDTO;
 import net.xdclass.enums.BizCodeEnum;
+import net.xdclass.enums.FileTypeEnum;
 import net.xdclass.enums.FolderFlagEnum;
 import net.xdclass.exception.BizException;
 import net.xdclass.mapper.AccountFileMapper;
 import net.xdclass.mapper.FileMapper;
 import net.xdclass.model.AccountFileDO;
+import net.xdclass.model.FileDO;
 import net.xdclass.service.AccountFileService;
+import net.xdclass.util.CommonUtil;
 import net.xdclass.util.SpringBeanUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
@@ -36,6 +43,17 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     @Autowired
     private AccountFileMapper accountFileMapper;
+
+
+    @Autowired
+    private StoreEngine fileStoreEngine;
+
+    @Autowired
+    private MinioConfig minioConfig;
+
+
+    @Autowired
+    private FileMapper fileMapper;
 
     /**
      * 获取文件列表接口
@@ -212,6 +230,70 @@ public class AccountFileServiceImpl implements AccountFileService {
 
         return folderTreeNodeDTOS;
 
+    }
+
+    /**
+     * 文件上传
+     * 1、上传到存储引擎
+     * 2、保存文件关系
+     * 3、保存账号和文件的关系
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void fileUpload(FileUploadReq req) {
+        //上传到存储引擎
+        String storeFileObjectKey = storeFile(req);
+
+        //保存文件关系 + 保存账号和文件的关系
+        saveFileAndAccountFile( req,storeFileObjectKey);
+    }
+
+    /**
+     * 保存文件和账号文件的关系到数据库
+     * @param req
+     * @param storeFileObjectKey
+     */
+    public void saveFileAndAccountFile(FileUploadReq req, String storeFileObjectKey) {
+        //保存文件
+        FileDO fileDO = saveFile(req,storeFileObjectKey);
+
+        //保存文件账号关系
+        AccountFileDTO accountFileDTO = AccountFileDTO.builder()
+                .accountId(req.getAccountId())
+                .parentId(req.getParentId())
+                .fileId(fileDO.getId())
+                .fileName(req.getFilename())
+                .isDir(FolderFlagEnum.NO.getCode())
+                .fileSuffix(fileDO.getFileSuffix())
+                .fileSize(req.getFileSize())
+                .fileType(FileTypeEnum.fromExtension(fileDO.getFileSuffix()).name())
+                .build();
+        saveAccountFile(accountFileDTO);
+
+    }
+
+    private FileDO saveFile(FileUploadReq req, String storeFileObjectKey) {
+        FileDO fileDO = new FileDO();
+        fileDO.setAccountId(req.getAccountId());
+        fileDO.setFileName(req.getFilename());
+        fileDO.setFileSize(req.getFile() !=null ? req.getFile().getSize():req.getFileSize());
+        fileDO.setFileSuffix(CommonUtil.getFileSuffix(req.getFilename()));
+        fileDO.setObjectKey(storeFileObjectKey);
+        fileDO.setIdentifier(req.getIdentifier());
+        fileMapper.insert(fileDO);
+        return fileDO;
+    }
+
+    /**
+     * 上传文件到存储引擎，返回存储的文件路径
+     * @param req
+     * @return
+     */
+    private String storeFile(FileUploadReq req) {
+
+        String objectKey = CommonUtil.getFilePath(req.getFilename());
+        fileStoreEngine.upload(minioConfig.getBucketName(), objectKey, req.getFile());
+        return objectKey;
     }
 
     /**

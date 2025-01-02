@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import net.xdclass.controller.req.FileUpdateReq;
+import net.xdclass.controller.req.FileUploadReq;
 import net.xdclass.controller.req.FolderCreateReq;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.FolderTreeNodeDTO;
@@ -79,4 +80,19 @@ public class AccountFileController {
         List<FolderTreeNodeDTO> list = accountFileService.folderTree(accountId);
         return JsonData.buildSuccess(list);
     }
+
+
+    /**
+     * 普通小文件上传接口
+     */
+    @PostMapping("upload")
+    @Operation(summary = "普通小文件上传", description = "普通小文件上传")
+    public JsonData upload(FileUploadReq req) {
+        req.setAccountId(LoginInterceptor.threadLocal.get().getId());
+        accountFileService.fileUpload(req);
+        return JsonData.buildSuccess();
+    }
+
+
+
 }
