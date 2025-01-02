@@ -28,7 +28,7 @@ public enum BizCodeEnum {
     SHARE_CANCEL( 260406, "分享已取消"),
     SHARE_EXPIRED( 260407, "分享已过期"),
     SHARE_FILE_ILLEGAL( 260408, "分享的文件不合规"),
-    FILE_MOVE_ERROR(270101,"文件移动部分失败" );
+    FILE_BATCH_UPDATE_ERROR(270101,"文件批量操作错误" );
 
     @Getter
     private String message;

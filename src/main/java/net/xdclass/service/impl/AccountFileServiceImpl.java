@@ -1,6 +1,5 @@
 package net.xdclass.service.impl;
 
-import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -276,16 +275,58 @@ public class AccountFileServiceImpl implements AccountFileService {
                 .set("parent_id",req.getTargetParentId());
         int updateCount = accountFileMapper.update(null, updateWrapper);
         if(updateCount!=req.getFileIds().size()){
-            throw new BizException(BizCodeEnum.FILE_MOVE_ERROR);
+            throw new BizException(BizCodeEnum.FILE_BATCH_UPDATE_ERROR);
         }
 
     }
 
     /**
      * 检查目标文件夹ID是否合法,包括子文件夹
+     * 1、目标的文件ID不能是文件
+     * 2、要操作的文件列表不能包括目标文件ID
      * @param req
      */
     private void checkTargetParentIdLegal(FileBatchReq req) {
+        //目标的文件ID不能是文件
+        AccountFileDO targetAccountFileDO = accountFileMapper.selectOne(new QueryWrapper<AccountFileDO>()
+                .eq("id", req.getTargetParentId())
+                .eq("is_dir", FolderFlagEnum.NO.getCode())
+                .eq("account_id", req.getAccountId()));
+        if(targetAccountFileDO == null){
+            log.error("目标文件ID不是文件，需要是文件夹，targetParentId={}", req.getTargetParentId());
+            throw new BizException(BizCodeEnum.FILE_TARGET_PARENT_ILLEGAL);
+        }
+
+        /**
+         * 要操作的文件列表不能包括目标文件ID
+         * 思路
+         * 1、查询批量操作的文件夹和文件夹，递归处理
+         * 2、判断是否在里面
+         */
+        List<AccountFileDO> prepareAccountFileDOList = accountFileMapper.selectList(new QueryWrapper<AccountFileDO>()
+                .in("id", req.getFileIds())
+                .eq("account_id", req.getAccountId()));
+
+        //定义一个容器，存储全部文件夹，包括子文件夹
+        List<AccountFileDO> allAccountFileDOList = new ArrayList<>();
+        //递归查找全部子文件夹
+        findAllAccountFileDOWithRecur(allAccountFileDOList,prepareAccountFileDOList,false);
+
+        //判断是否在里面
+        if(allAccountFileDOList.stream().anyMatch(accountFileDO -> Objects.equals(accountFileDO.getId(), req.getTargetParentId()))){
+            log.error("目标文件ID不能是文件，需要是文件夹，targetParentId={}", req.getTargetParentId());
+            throw new BizException(BizCodeEnum.FILE_TARGET_PARENT_ILLEGAL);
+        }
+
+    }
+
+    /**
+     * 递归查找
+     * @param allAccountFileDOList
+     * @param prepareAccountFileDOList
+     * @param onlyFolder
+     */
+    private void findAllAccountFileDOWithRecur(List<AccountFileDO> allAccountFileDOList, List<AccountFileDO> prepareAccountFileDOList, boolean onlyFolder) {
 
     }
 
@@ -296,7 +337,17 @@ public class AccountFileServiceImpl implements AccountFileService {
      * @return
      */
     private List<AccountFileDO> checkFileIdLegal(List<Long> fileIds, Long accountId) {
-        return null;
+
+        List<AccountFileDO> accountFileDOList = accountFileMapper
+                .selectList(new QueryWrapper<AccountFileDO>().in("id", fileIds).eq("account_id", accountId));
+
+        if(accountFileDOList.size()!=fileIds.size()){
+            log.error("文件ID数量不合法,ids={}", fileIds);
+            throw new BizException(BizCodeEnum.FILE_BATCH_UPDATE_ERROR);
+        }
+        //进一步完善的话，可以加个set，防止重复元素
+
+        return accountFileDOList;
     }
 
     /**
