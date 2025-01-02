@@ -1,5 +1,6 @@
 package net.xdclass.service;
 
+import net.xdclass.controller.req.FileBatchReq;
 import net.xdclass.controller.req.FileUpdateReq;
 import net.xdclass.controller.req.FileUploadReq;
 import net.xdclass.controller.req.FolderCreateReq;
@@ -50,4 +51,10 @@ public interface AccountFileService {
      * @param req
      */
     void fileUpload(FileUploadReq req);
+
+    /**
+     * 批量移动目标文件夹
+     * @param req
+     */
+    void moveBatch(FileBatchReq req);
 }

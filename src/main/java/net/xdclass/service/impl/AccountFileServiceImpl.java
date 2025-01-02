@@ -2,9 +2,11 @@ package net.xdclass.service.impl;
 
 import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.xdclass.component.StoreEngine;
 import net.xdclass.config.MinioConfig;
+import net.xdclass.controller.req.FileBatchReq;
 import net.xdclass.controller.req.FileUpdateReq;
 import net.xdclass.controller.req.FileUploadReq;
 import net.xdclass.controller.req.FolderCreateReq;
@@ -246,6 +248,55 @@ public class AccountFileServiceImpl implements AccountFileService {
 
         //保存文件关系 + 保存账号和文件的关系
         saveFileAndAccountFile( req,storeFileObjectKey);
+    }
+
+    /**
+     * 批量移动文件
+     * 1、检查被移动的文件ID是否合法
+     * 2、检查目标文件夹ID是否合法
+     * 3、批量移动文件到目标文件夹（重复名称处理）
+     *
+     * @param req
+     */
+    @Override
+    public void moveBatch(FileBatchReq req) {
+
+        // 检查被移动的文件ID是否合法
+        List<AccountFileDO> accountFileDOList =  checkFileIdLegal(req.getFileIds(),req.getAccountId());
+
+        //检查目标文件夹ID是否合法,包括子文件夹
+        checkTargetParentIdLegal(req);
+
+        //批量移动文件到目标文件夹（重复名称处理）
+        accountFileDOList.forEach(this::processFileNameDuplicate);
+
+        //更新文件或者文件夹的parent_id为目标文件夹的ID
+        UpdateWrapper<AccountFileDO> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.in("id",req.getFileIds())
+                .set("parent_id",req.getTargetParentId());
+        int updateCount = accountFileMapper.update(null, updateWrapper);
+        if(updateCount!=req.getFileIds().size()){
+            throw new BizException(BizCodeEnum.FILE_MOVE_ERROR);
+        }
+
+    }
+
+    /**
+     * 检查目标文件夹ID是否合法,包括子文件夹
+     * @param req
+     */
+    private void checkTargetParentIdLegal(FileBatchReq req) {
+
+    }
+
+    /**
+     * 检查被移动的文件ID是否合法
+     * @param fileIds
+     * @param accountId
+     * @return
+     */
+    private List<AccountFileDO> checkFileIdLegal(List<Long> fileIds, Long accountId) {
+        return null;
     }
 
     /**

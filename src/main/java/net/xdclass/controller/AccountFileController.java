@@ -3,6 +3,7 @@ package net.xdclass.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import net.xdclass.controller.req.FileBatchReq;
 import net.xdclass.controller.req.FileUpdateReq;
 import net.xdclass.controller.req.FileUploadReq;
 import net.xdclass.controller.req.FolderCreateReq;
@@ -93,6 +94,18 @@ public class AccountFileController {
         return JsonData.buildSuccess();
     }
 
+
+    /**
+     * 文件批量移动
+     */
+    @PostMapping("move_batch")
+    @Operation(summary = "文件批量移动", description = "文件批量移动")
+    public JsonData moveBatch(
+            @Parameter(description = "文件批量移动请求对象", required = true) @RequestBody FileBatchReq req) {
+        req.setAccountId(LoginInterceptor.threadLocal.get().getId());
+        accountFileService.moveBatch(req);
+        return JsonData.buildSuccess();
+    }
 
 
 }
