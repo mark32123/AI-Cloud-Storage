@@ -322,11 +322,26 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     /**
      * 递归查找
-     * @param allAccountFileDOList
-     * @param prepareAccountFileDOList
-     * @param onlyFolder
+     * @param allAccountFileDOList 容器存储查询到到全部文件或者文件夹
+     * @param prepareAccountFileDOList 待查询的文件和文件夹
+     * @param onlyFolder 控制是否只存储文件
      */
     private void findAllAccountFileDOWithRecur(List<AccountFileDO> allAccountFileDOList, List<AccountFileDO> prepareAccountFileDOList, boolean onlyFolder) {
+
+        for(AccountFileDO accountFileDO : prepareAccountFileDOList){
+            if(Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())){
+                //递归查找
+                List<AccountFileDO> childAccountFileDOList = accountFileMapper.selectList(new QueryWrapper<AccountFileDO>()
+                        .eq("parent_id", accountFileDO.getId()));
+                findAllAccountFileDOWithRecur(allAccountFileDOList,childAccountFileDOList,onlyFolder);
+            }
+
+            //如果通过onlyFolder是true,只存储文件夹到allAccountFileDOList，否则都存储到allAccountFileDOList
+            if(!onlyFolder || Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())){
+                allAccountFileDOList.add(accountFileDO);
+            }
+        }
+
 
     }
 
