@@ -245,11 +245,37 @@ public class AccountFileServiceImpl implements AccountFileService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void fileUpload(FileUploadReq req) {
-        //上传到存储引擎
-        String storeFileObjectKey = storeFile(req);
 
-        //保存文件关系 + 保存账号和文件的关系
-        saveFileAndAccountFile( req,storeFileObjectKey);
+        boolean storageEnough = checkAndUpdateCapacity(req.getAccountId(),req.getFileSize());
+        if(storageEnough){
+            //上传到存储引擎
+            String storeFileObjectKey = storeFile(req);
+
+            //保存文件关系 + 保存账号和文件的关系
+            saveFileAndAccountFile( req,storeFileObjectKey);
+        }else {
+            throw new BizException(BizCodeEnum.FILE_STORAGE_NOT_ENOUGH);
+        }
+
+
+    }
+
+    /**
+     * 检查存储空间和更新存储空间
+     * @param accountId
+     * @param fileSize
+     * @return
+     */
+    private boolean checkAndUpdateCapacity(Long accountId, Long fileSize) {
+        StorageDO storageDO = storageMapper.selectOne(new QueryWrapper<StorageDO>().eq("account_id", accountId));
+        Long totalSize = storageDO.getTotalSize();
+        if(storageDO.getUsedSize() + fileSize <= totalSize){
+            storageDO.setUsedSize(storageDO.getUsedSize() + fileSize);
+            storageMapper.updateById(storageDO);
+            return true;
+        }else {
+            return false;
+        }
     }
 
     /**
