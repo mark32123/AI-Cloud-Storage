@@ -290,7 +290,7 @@ public class AccountFileServiceImpl implements AccountFileService {
         //目标的文件ID不能是文件
         AccountFileDO targetAccountFileDO = accountFileMapper.selectOne(new QueryWrapper<AccountFileDO>()
                 .eq("id", req.getTargetParentId())
-                .eq("is_dir", FolderFlagEnum.NO.getCode())
+                .eq("is_dir", FolderFlagEnum.YES.getCode())
                 .eq("account_id", req.getAccountId()));
         if(targetAccountFileDO == null){
             log.error("目标文件ID不是文件，需要是文件夹，targetParentId={}", req.getTargetParentId());
