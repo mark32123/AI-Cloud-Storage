@@ -3,10 +3,7 @@ package net.xdclass.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import net.xdclass.controller.req.FileBatchReq;
-import net.xdclass.controller.req.FileUpdateReq;
-import net.xdclass.controller.req.FileUploadReq;
-import net.xdclass.controller.req.FolderCreateReq;
+import net.xdclass.controller.req.*;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.FolderTreeNodeDTO;
 import net.xdclass.interceptor.LoginInterceptor;
@@ -106,6 +103,20 @@ public class AccountFileController {
         accountFileService.moveBatch(req);
         return JsonData.buildSuccess();
     }
+
+
+    /**
+     * 文件批量删除
+     */
+    @PostMapping("del_batch")
+    public JsonData delBatch(@RequestBody FileDelReq req ){
+        req.setAccountId(LoginInterceptor.threadLocal.get().getId());
+
+        accountFileService.delBatch(req);
+
+        return JsonData.buildSuccess();
+    }
+
 
 
 }

@@ -5,10 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.xdclass.component.StoreEngine;
 import net.xdclass.config.MinioConfig;
-import net.xdclass.controller.req.FileBatchReq;
-import net.xdclass.controller.req.FileUpdateReq;
-import net.xdclass.controller.req.FileUploadReq;
-import net.xdclass.controller.req.FolderCreateReq;
+import net.xdclass.controller.req.*;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.FolderTreeNodeDTO;
 import net.xdclass.enums.BizCodeEnum;
@@ -17,8 +14,10 @@ import net.xdclass.enums.FolderFlagEnum;
 import net.xdclass.exception.BizException;
 import net.xdclass.mapper.AccountFileMapper;
 import net.xdclass.mapper.FileMapper;
+import net.xdclass.mapper.StorageMapper;
 import net.xdclass.model.AccountFileDO;
 import net.xdclass.model.FileDO;
+import net.xdclass.model.StorageDO;
 import net.xdclass.service.AccountFileService;
 import net.xdclass.util.CommonUtil;
 import net.xdclass.util.SpringBeanUtil;
@@ -55,6 +54,10 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     @Autowired
     private FileMapper fileMapper;
+
+
+    @Autowired
+    private StorageMapper storageMapper;
 
     /**
      * 获取文件列表接口
@@ -277,6 +280,41 @@ public class AccountFileServiceImpl implements AccountFileService {
         if(updateCount!=req.getFileIds().size()){
             throw new BizException(BizCodeEnum.FILE_BATCH_UPDATE_ERROR);
         }
+
+    }
+
+
+    /**
+     * 文件的批量删除
+     * 步骤一：检查是否满足：1、文件ID数量是否合法，2、文件是否属于当前用户
+     * 步骤二：判断文件是否是文件夹，文件夹的话需要递归获取里面子文件ID，然后进行批量删除
+     * 步骤三：需要更新账号存储空间使用情况
+     * 步骤四：批量删除账号映射文件，考虑回收站如何设计
+     * @param req
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delBatch(FileDelReq req) {
+        //步骤一：检查是否满足：1、文件ID数量是否合法，2、文件是否属于当前用户
+        List<AccountFileDO> accountFileDOList = checkFileIdLegal(req.getFileIds(), req.getAccountId());
+
+        //步骤二：判断文件是否是文件夹，文件夹的话需要递归获取里面子文件ID，然后进行批量删除
+        List<AccountFileDO> storeAccountFileDOList = new ArrayList<>();
+        findAllAccountFileDOWithRecur(storeAccountFileDOList, accountFileDOList, false);
+
+        //拿到全部文件ID列表
+        List<Long> allFileIdList = storeAccountFileDOList.stream().map(AccountFileDO::getId).collect(Collectors.toList());
+
+        //步骤三：需要更新账号存储空间使用情况 可以加个分布式锁，redission 作业，提示可以用account_id锁粒度
+        long allFileSize = storeAccountFileDOList.stream()
+                .filter(file -> file.getIsDir().equals(FolderFlagEnum.NO.getCode()))
+                .mapToLong(AccountFileDO::getFileSize).sum();
+        StorageDO storageDO = storageMapper.selectOne(new QueryWrapper<StorageDO>().eq("account_id", req.getAccountId()));
+        storageDO.setUsedSize(storageDO.getUsedSize() - allFileSize);
+        storageMapper.updateById(storageDO);
+
+        // 步骤四：批量删除账号映射文件，考虑回收站如何设计
+        accountFileMapper.deleteBatchIds(allFileIdList);
 
     }
 

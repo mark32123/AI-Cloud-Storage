@@ -1,9 +1,6 @@
 package net.xdclass.service;
 
-import net.xdclass.controller.req.FileBatchReq;
-import net.xdclass.controller.req.FileUpdateReq;
-import net.xdclass.controller.req.FileUploadReq;
-import net.xdclass.controller.req.FolderCreateReq;
+import net.xdclass.controller.req.*;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.FolderTreeNodeDTO;
 
@@ -57,4 +54,10 @@ public interface AccountFileService {
      * @param req
      */
     void moveBatch(FileBatchReq req);
+
+    /**
+     * 文件的批量删除
+     * @param req
+     */
+    void delBatch(FileDelReq req);
 }
