@@ -345,6 +345,30 @@ public class AccountFileServiceImpl implements AccountFileService {
     }
 
     /**
+     * * 检查被转移的文件ID是否合法
+     * * 检查目标文件夹ID是否合法
+     * * 执行拷贝，递归查找【差异点，ID是全新的】
+     * * 计算存储空间大小，检查是否足够【差异点，空间需要检查】
+     * * 存储相关记录
+     * @param req
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void copyBatch(FileBatchReq req) {
+
+        //检查被转移的文件ID是否合法
+        List<AccountFileDO> accountFileDOList = checkFileIdLegal(req.getFileIds(), req.getAccountId());
+
+        //检查目标文件夹ID是否合法
+        checkTargetParentIdLegal(req);
+
+        //执行拷贝，递归查找【差异点，ID是全新的】
+
+
+
+    }
+
+    /**
      * 检查目标文件夹ID是否合法,包括子文件夹
      * 1、目标的文件ID不能是文件
      * 2、要操作的文件列表不能包括目标文件ID

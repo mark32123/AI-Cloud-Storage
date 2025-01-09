@@ -60,4 +60,10 @@ public interface AccountFileService {
      * @param req
      */
     void delBatch(FileDelReq req);
+
+    /**
+     * 文件复制
+     * @param req
+     */
+    void copyBatch(FileBatchReq req);
 }

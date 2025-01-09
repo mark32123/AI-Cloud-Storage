@@ -109,7 +109,7 @@ public class AccountFileController {
      * 文件批量删除
      */
     @PostMapping("del_batch")
-    public JsonData delBatch(@RequestBody FileDelReq req ){
+    public JsonData delBatch(@RequestBody FileDelReq req) {
         req.setAccountId(LoginInterceptor.threadLocal.get().getId());
 
         accountFileService.delBatch(req);
@@ -117,6 +117,18 @@ public class AccountFileController {
         return JsonData.buildSuccess();
     }
 
+
+    /**
+     * 文件复制接口
+     */
+    @PostMapping("copy_batch")
+    @Operation(summary = "文件批量复制", description = "文件批量复制")
+    public JsonData copyBatch(
+            @Parameter(description = "文件批量复制请求对象", required = true) @RequestBody FileBatchReq req) {
+        req.setAccountId(LoginInterceptor.threadLocal.get().getId());
+        accountFileService.copyBatch(req);
+        return JsonData.buildSuccess();
+    }
 
 
 }
