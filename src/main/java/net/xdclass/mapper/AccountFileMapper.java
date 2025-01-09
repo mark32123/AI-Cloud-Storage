@@ -2,6 +2,9 @@ package net.xdclass.mapper;
 
 import net.xdclass.model.AccountFileDO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * <p>
@@ -12,5 +15,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @since 2024-12-24
  */
 public interface AccountFileMapper extends BaseMapper<AccountFileDO> {
+
+    void insertFileBatch(@Param("newAccountFileDOList") List<AccountFileDO> newAccountFileDOList);
 
 }

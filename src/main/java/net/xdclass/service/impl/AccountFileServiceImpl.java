@@ -1,5 +1,6 @@
 package net.xdclass.service.impl;
 
+import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -363,9 +364,83 @@ public class AccountFileServiceImpl implements AccountFileService {
         checkTargetParentIdLegal(req);
 
         //执行拷贝，递归查找【差异点，ID是全新的】
+        List<AccountFileDO> newAccountFileDOList = findBatchCopyFileWithRecur(accountFileDOList, req.getTargetParentId());
+
+        //计算存储空间大小，检查是否足够【差异点，空间需要检查】
+        long totalFileSize = newAccountFileDOList.stream().filter(file -> file.getIsDir().equals(FolderFlagEnum.NO.getCode()))
+                .mapToLong(AccountFileDO::getFileSize).sum();
+        if(!checkAndUpdateCapacity(req.getAccountId(),totalFileSize)){
+            throw new BizException(BizCodeEnum.FILE_STORAGE_NOT_ENOUGH);
+        }
+        //存储
+        accountFileMapper.insertFileBatch(newAccountFileDOList);
+
+
+    }
+
+    /**
+     * 包括递归处理，生成新的ID
+     * @param accountFileDOList
+     * @param targetParentId
+     * @return
+     */
+    private List<AccountFileDO> findBatchCopyFileWithRecur(List<AccountFileDO> accountFileDOList, Long targetParentId) {
+        List<AccountFileDO> newAccountFileDOList = new ArrayList<>();
+
+        accountFileDOList.forEach(accountFileDO -> doCopyChildRecord(newAccountFileDOList,accountFileDO,targetParentId));
+
+        return newAccountFileDOList;
+    }
+
+    /**
+     * 递归处理，包括子文件夹
+     * @param newAccountFileDOList
+     * @param accountFileDO
+     * @param targetParentId
+     */
+    private void doCopyChildRecord(List<AccountFileDO> newAccountFileDOList, AccountFileDO accountFileDO, Long targetParentId) {
+        //保存旧的ID，方便查找子文件夹
+        Long oldAccountFileId = accountFileDO.getId();
+        //创建新记录
+        accountFileDO.setId(IdUtil.getSnowflakeNextId());
+        accountFileDO.setParentId(targetParentId);
+        accountFileDO.setGmtModified(null);
+        accountFileDO.setGmtCreate(null);
+
+        //处理重复文件夹
+        processFileNameDuplicate(accountFileDO);
+
+        //纳入容器存储
+        newAccountFileDOList.add(accountFileDO);
+
+        //判断是文件还是文件夹，递归处理
+        if(Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())){
+            //继续获取子文件夹列表
+            List<AccountFileDO> childAccountFileDOList = findChildAccountFile(accountFileDO.getAccountId(),oldAccountFileId);
+            if(CollectionUtils.isEmpty(childAccountFileDOList)){
+                return;
+            }
+            //递归处理
+            childAccountFileDOList
+                    .forEach(childAccountFileDO -> doCopyChildRecord(newAccountFileDOList,childAccountFileDO,accountFileDO.getId()));
+        }
 
 
 
+
+
+
+    }
+
+    /**
+     * 查找文件记录，只查询下一级，不递归
+     * @param accountId
+     * @param parentId
+     * @return
+     */
+    private List<AccountFileDO> findChildAccountFile(Long accountId, Long parentId) {
+        return accountFileMapper.selectList(new QueryWrapper<AccountFileDO>()
+                .eq("account_id", accountId).eq("parent_id", parentId));
     }
 
     /**
