@@ -399,7 +399,7 @@ public class AccountFileServiceImpl implements AccountFileService {
             accountFileDTO.setAccountId(req.getAccountId());
             accountFileDTO.setFileId(fileDO.getId());
             accountFileDTO.setParentId(req.getParentId());
-            accountFileDTO.setFileName(fileDO.getFileName());
+            accountFileDTO.setFileName(req.getFilename());
             accountFileDTO.setFileSize(fileDO.getFileSize());
             accountFileDTO.setDel(false);
             accountFileDTO.setIsDir(FolderFlagEnum.NO.getCode());

@@ -134,7 +134,7 @@ public class AccountFileController {
      * 文件秒传接口, true就是文件秒传成功，false失败，需要重新调用上传接口
      */
     @PostMapping("second_upload")
-    public JsonData secondUpload(FileSecondUploadReq req) {
+    public JsonData secondUpload(@RequestBody FileSecondUploadReq req) {
         req.setAccountId(LoginInterceptor.threadLocal.get().getId());
         Boolean flag = accountFileService.secondUpload(req);
         return JsonData.buildSuccess(flag);
