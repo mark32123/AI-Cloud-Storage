@@ -66,4 +66,11 @@ public interface AccountFileService {
      * @param req
      */
     void copyBatch(FileBatchReq req);
+
+    /**
+     * 文件秒传
+     * @param req
+     * @return
+     */
+    Boolean secondUpload(FileSecondUploadReq req);
 }

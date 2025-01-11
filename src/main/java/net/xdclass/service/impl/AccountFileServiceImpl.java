@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.xdclass.component.StoreEngine;
 import net.xdclass.config.MinioConfig;
 import net.xdclass.controller.req.*;
+import net.xdclass.dto.AccountDTO;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.FolderTreeNodeDTO;
 import net.xdclass.enums.BizCodeEnum;
@@ -376,6 +377,38 @@ public class AccountFileServiceImpl implements AccountFileService {
         accountFileMapper.insertFileBatch(newAccountFileDOList);
 
 
+    }
+
+    /**
+     * 文件秒传
+     * 1、检查文件是否存在
+     * 2、检查空间是否足够
+     * 3、建立关系
+     * @param req
+     * @return
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean secondUpload(FileSecondUploadReq req) {
+        //检查文件是否存在
+        FileDO fileDO = fileMapper.selectOne(new QueryWrapper<FileDO>().eq("identifier", req.getIdentifier()));
+        //检查空间是否足够
+        if(fileDO!=null && checkAndUpdateCapacity(req.getAccountId(),fileDO.getFileSize())){
+            //处理文件秒传
+            AccountFileDTO accountFileDTO = new AccountFileDTO();
+            accountFileDTO.setAccountId(req.getAccountId());
+            accountFileDTO.setFileId(fileDO.getId());
+            accountFileDTO.setParentId(req.getParentId());
+            accountFileDTO.setFileName(fileDO.getFileName());
+            accountFileDTO.setFileSize(fileDO.getFileSize());
+            accountFileDTO.setDel(false);
+            accountFileDTO.setIsDir(FolderFlagEnum.NO.getCode());
+
+            //保存关联文件关系，里面有做相关检查
+            saveAccountFile(accountFileDTO);
+            return true;
+        }
+        return false;
     }
 
     /**
