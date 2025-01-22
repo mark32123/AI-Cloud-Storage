@@ -14,10 +14,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @SpringBootTest
 @Slf4j
@@ -219,6 +217,88 @@ class AmazonS3ClientTests {
 			URL url = amazonS3Client.generatePresignedUrl(request);
 			preSignedUrls.add(url.toString());
 			log.info("preSignedUrl:{}",url);
+		}
+
+
+	}
+
+	/**
+	 * 合并分片
+	 */
+	@Test
+	public void testMergeChunk() {
+
+		String bucketName = "ai-pan";
+		String objectKey = "/aa/bb/cc/666.txt";
+		//分片数量，这里配置4个
+		int chunkCount = 4;
+		String uploadId = "NzVhZjVjY2YtNzBhNS00YWE0LThjYjQtZmQzNmFkMTQyNTRmLmY1OGY2ZTEyLTY5YjYtNDQ3ZC04ZWMxLWJlZTVmOGFmZTkzYw";
+
+		//创建一个列出分片请求
+		ListPartsRequest listPartsRequest = new ListPartsRequest(bucketName, objectKey, uploadId);
+		PartListing partListing = amazonS3Client.listParts(listPartsRequest);
+		List<PartSummary> partList = partListing.getParts();
+
+		//检查分片数量和预期的是否一致
+		if (partList.size() != chunkCount) {
+			//已经上传的分片数量和记录中的不一样，不能合并
+			throw new RuntimeException("分片数量不一致");
+		}
+
+		//创建完成分片上传请求对象，进行合并
+		CompleteMultipartUploadRequest completeMultipartUploadRequest =
+				new CompleteMultipartUploadRequest()
+						.withBucketName(bucketName)
+						.withKey(objectKey)
+						.withUploadId(uploadId)
+						.withPartETags(
+								partList.stream()
+										.map(partSummary ->
+												new PartETag(partSummary.getPartNumber(), partSummary.getETag()))
+										.collect(Collectors.toList()));
+
+		//完成分片上传合并，获取结果
+		CompleteMultipartUploadResult result = amazonS3Client.completeMultipartUpload(completeMultipartUploadRequest);
+		log.info("result:{}",result.getLocation());
+
+
+	}
+
+
+	/**
+	 * 其他步骤：上传进度验证，获取已经上传的分片文件, 未上传完成，调用接口获取上传进度
+	 */
+	@Test
+	public void testGetUploadProgress() {
+		String bucketName = "ai-pan";
+		String objectKey = "/aa/bb/cc/666.txt";
+		//分片数量，这里配置4个
+		int chunkCount = 4;
+		String uploadId = "NzVhZjVjY2YtNzBhNS00YWE0LThjYjQtZmQzNmFkMTQyNTRmLmY1OGY2ZTEyLTY5YjYtNDQ3ZC04ZWMxLWJlZTVmOGFmZTkzYw";
+
+		//检查对应的桶里面是否存在对应的对象
+		boolean doesObjectExist = amazonS3Client.doesObjectExist(bucketName, objectKey);
+		if(!doesObjectExist){
+			//未上传完成，返回已经上传的分片文件
+			ListPartsRequest listPartsRequest = new ListPartsRequest(bucketName, objectKey, uploadId);
+			PartListing partListing = amazonS3Client.listParts(listPartsRequest);
+			List<PartSummary> partList = partListing.getParts();
+
+			//创建一个结果，用于存储上传状态和分片列表
+			Map<String,Object> result = new HashMap<>(2);
+			result.put("finished",false);
+			result.put("exitPartList",partList);
+
+			//前端就可以通过这个判断是否要调用merge合并接口
+			log.info("result:{}",result);
+
+			//遍历每个分片的信息
+			for (PartSummary partSummary : partList) {
+				System.out.println("getPartNumber：" + partSummary.getPartNumber() +
+						"，getETag=" + partSummary.getETag() + "，getSize= " + partSummary.getSize() +
+						"，getLastModified=" + partSummary.getLastModified());
+			}
+
 		}
 
 
