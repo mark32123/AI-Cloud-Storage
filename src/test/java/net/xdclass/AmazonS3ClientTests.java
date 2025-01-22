@@ -14,7 +14,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @SpringBootTest
@@ -160,6 +162,66 @@ class AmazonS3ClientTests {
 
 		// 输出预签名url
 		System.out.println(preSignedUrl.toString());
+	}
+
+
+	//=====================大文件上传相关接口===========================
+
+	/**
+	 * 第一步：初始化大文件分片上传任务，获取uploadId
+	 * 如果初始化时有 uploadId，说明是断点续传，不能重新生成 uploadId
+	 */
+	@Test
+	public void testInitiateMultipartUploadTask() {
+		String bucketName = "ai-pan";
+		String objectKey = "/aa/bb/cc/666.txt";
+
+		ObjectMetadata objectMetadata = new ObjectMetadata();
+		objectMetadata.setContentType("text/plain");
+
+		//初始化分片上传请求
+		InitiateMultipartUploadRequest initRequest =
+				new InitiateMultipartUploadRequest(bucketName, objectKey, objectMetadata);
+
+		//初始化分片上传任务
+		InitiateMultipartUploadResult uploadResult = amazonS3Client.initiateMultipartUpload(initRequest);
+		String uploadId = uploadResult.getUploadId();
+		log.info("uploadId:{}",uploadId);
+
+	}
+
+	/**
+	 * 第二步：测试初始化并生成多个预签名URL，返回给前端
+	 */
+	@Test
+	public void testGenePreSignedUrls() {
+
+		String bucketName = "ai-pan";
+		String objectKey = "/aa/bb/cc/666.txt";
+		//分片数量，这里配置4个
+		int chunkCount = 4;
+		String uploadId = "NzVhZjVjY2YtNzBhNS00YWE0LThjYjQtZmQzNmFkMTQyNTRmLmY1OGY2ZTEyLTY5YjYtNDQ3ZC04ZWMxLWJlZTVmOGFmZTkzYw";
+
+		//存储预签名的地址
+		List<String> preSignedUrls = new ArrayList<>(chunkCount);
+		//遍历每个分片，生成预签名地址
+		for (int i = 1; i <= chunkCount; i++) {
+			//生成预签名URL,配置过期时间,1小时的时间
+			Date expireDate = DateUtil.offsetMillisecond(new Date(), 3600 * 1000);
+			//创建生成签名URL的请求，并且指定方法为PUT
+			GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucketName, objectKey)
+					.withExpiration(expireDate).withMethod(HttpMethod.PUT);
+
+			//添加上传ID，和分片编号做为请求参数
+			request.addRequestParameter("uploadId", uploadId);
+			request.addRequestParameter("partNumber", String.valueOf(i));
+			//请求签名URL
+			URL url = amazonS3Client.generatePresignedUrl(request);
+			preSignedUrls.add(url.toString());
+			log.info("preSignedUrl:{}",url);
+		}
+
+
 	}
 
 
