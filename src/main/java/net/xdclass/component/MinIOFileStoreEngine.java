@@ -1,10 +1,8 @@
 package net.xdclass.component;
 
+import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.Bucket;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.model.*;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -230,5 +229,56 @@ public class MinIOFileStoreEngine implements StoreEngine {
         } catch (IOException e) {
             log.error("下载 bucket {} 中对象 {} 失败: {}", bucketName, objectKey, e.getMessage(), e);
         }
+    }
+
+
+    @Override
+    public PartListing listMultipart(String bucketName, String objectKey, String uploadId) {
+        try {
+            ListPartsRequest request = new ListPartsRequest(bucketName, objectKey, uploadId);
+            return amazonS3Client.listParts(request);
+        } catch (Exception e) {
+            log.error("errorMsg={}", e);
+            return null;
+        }
+    }
+
+    @Override
+    public InitiateMultipartUploadResult initMultipartUploadTask(String bucketName, String objectKey, ObjectMetadata metadata) {
+        try {
+            InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest(bucketName, objectKey, metadata);
+            return amazonS3Client.initiateMultipartUpload(request);
+        } catch (Exception e) {
+            log.error("errorMsg={}", e);
+            return null;
+        }
+    }
+
+
+    @Override
+    public URL genePreSignedUrl(String bucketName, String objectKey, HttpMethod httpMethod, Date expiration, Map<String, Object> params) {
+        try {
+            GeneratePresignedUrlRequest genePreSignedUrlReq =
+                    new GeneratePresignedUrlRequest(bucketName, objectKey, httpMethod)
+                            .withExpiration(expiration);
+            //遍历params作为参数加到genePreSignedUrlReq里面，比如 添加上传ID和分片编号作为请求参数
+            //genePreSignedUrlReq.addRequestParameter("uploadId", uploadId);
+            //genePreSignedUrlReq.addRequestParameter("partNumber", String.valueOf(i));
+            for (Map.Entry<String, Object> entry : params.entrySet()) {
+                genePreSignedUrlReq.addRequestParameter(entry.getKey(), String.valueOf(entry.getValue()));
+            }
+            // 生成并获取预签名URL
+            return amazonS3Client.generatePresignedUrl(genePreSignedUrlReq);
+        } catch (Exception e) {
+            log.error("errorMsg={}", e);
+            return null;
+        }
+    }
+
+    @Override
+    public CompleteMultipartUploadResult mergeChunks(String bucketName, String objectKey, String uploadId, List<PartETag> partETags) {
+        CompleteMultipartUploadRequest request = new CompleteMultipartUploadRequest(bucketName, objectKey, uploadId, partETags);
+        return amazonS3Client.completeMultipartUpload(request);
+
     }
 }
