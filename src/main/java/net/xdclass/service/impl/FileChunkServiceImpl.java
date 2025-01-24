@@ -202,4 +202,33 @@ public class FileChunkServiceImpl implements FileChunkService {
             log.info("合并成功");
         }
     }
+
+    @Override
+    public FileChunkDTO listFileChunk(Long accountId, String identifier) {
+        //查询任务是否存在
+        FileChunkDO task = fileChunkMapper.selectOne(new QueryWrapper<FileChunkDO>()
+                .eq("account_id", accountId)
+                .eq("identifier", identifier));
+        if(task == null){
+            throw new BizException(BizCodeEnum.FILE_CHUNK_TASK_NOT_EXISTS);
+        }
+
+        FileChunkDTO result = new FileChunkDTO(task);
+
+        //判断文件服务器那边是否存在
+        boolean objectExist = fileStoreEngine.doesObjectExist(task.getBucketName(), task.getObjectKey());
+        if(!objectExist){
+            //不存在，就是未上传完成，返回已经上传的分片概述
+            PartListing partListing = fileStoreEngine.listMultipart(task.getBucketName(), task.getObjectKey(), task.getUploadId());
+
+            if(partListing.getParts().size() == task.getChunkNum()){
+                //已经上传完成，可以合并
+                result.setFinished(true).setExitPartList(partListing.getParts());
+            }else {
+                //  未上传完成，还不能合并
+                result.setFinished(false).setExitPartList(partListing.getParts());
+            }
+        }
+        return result;
+    }
 }

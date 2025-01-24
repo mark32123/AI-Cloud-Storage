@@ -27,4 +27,12 @@ public interface FileChunkService {
      * @param req
      */
     void mergeFileChunk(FileChunkMergeReq req);
+
+    /**
+     * 查询分片上传进度
+     * @param accountId
+     * @param identifier
+     * @return
+     */
+    FileChunkDTO listFileChunk(Long accountId, String identifier);
 }

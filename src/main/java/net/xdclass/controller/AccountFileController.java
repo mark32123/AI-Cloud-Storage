@@ -180,4 +180,15 @@ public class AccountFileController {
     }
 
 
+    /**
+     * 查询分片上传进度
+     */
+    @GetMapping("/chunk_upload_progress/{identifier}")
+    public JsonData getUploadProgress(@PathVariable("identifier") String identifier) {
+        Long accountId = LoginInterceptor.threadLocal.get().getId();
+        FileChunkDTO fileChunkDTO = fileChunkService.listFileChunk(accountId, identifier);
+        return JsonData.buildSuccess(fileChunkDTO);
+    }
+
+
 }
