@@ -76,4 +76,11 @@ public interface AccountFileService {
     Boolean secondUpload(FileSecondUploadReq req);
 
 
-}
+    /**
+     * 保存文件和文件关联关系
+     * @param req
+     * @param storeFileObjectKey
+     */
+     void saveFileAndAccountFile(FileUploadReq req, String storeFileObjectKey);
+
+    }

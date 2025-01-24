@@ -3,13 +3,14 @@ package net.xdclass.service.impl;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import com.amazonaws.HttpMethod;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
-import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.*;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.xdclass.component.StoreEngine;
 import net.xdclass.config.MinioConfig;
 import net.xdclass.controller.req.FileChunkInitTaskReq;
+import net.xdclass.controller.req.FileChunkMergeReq;
+import net.xdclass.controller.req.FileUploadReq;
 import net.xdclass.dto.FileChunkDTO;
 import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.exception.BizException;
@@ -17,7 +18,9 @@ import net.xdclass.mapper.FileChunkMapper;
 import net.xdclass.mapper.StorageMapper;
 import net.xdclass.model.FileChunkDO;
 import net.xdclass.model.StorageDO;
+import net.xdclass.service.AccountFileService;
 import net.xdclass.service.FileChunkService;
+import net.xdclass.service.FileService;
 import net.xdclass.util.CommonUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -26,10 +29,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 小滴课堂,愿景：让技术不再难学
@@ -56,6 +57,10 @@ public class FileChunkServiceImpl implements FileChunkService {
 
     @Autowired
     private MinioConfig minioConfig;
+
+    @Autowired
+    private AccountFileService accountFileService;
+
 
     /**
      * * 检查存储空间是否够( 合并文件的时候进行校验更新存储空间)
@@ -131,5 +136,70 @@ public class FileChunkServiceImpl implements FileChunkService {
         log.info("preSignedUrl:{}",preSignedUrl);
 
         return preSignedUrl.toString();
+    }
+
+    /**
+     * *  获取任务和分片列表，检查是否足够合并
+     * *  检查存储空间和更新
+     * *  合并分片
+     * *  判断合并分片是否成功
+     * *  存储文件和关联信息到数据库
+     * *  根据唯一标识符删除相关分片信息
+     * @param req
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void mergeFileChunk(FileChunkMergeReq req) {
+
+        //获取任务和分片列表，检查是否足够合并
+        FileChunkDO task = fileChunkMapper.selectOne(new QueryWrapper<FileChunkDO>()
+                .eq("account_id", req.getAccountId())
+                .eq("identifier", req.getIdentifier()));
+        if(task == null){
+            throw new BizException(BizCodeEnum.FILE_CHUNK_TASK_NOT_EXISTS);
+        }
+
+        PartListing partListing = fileStoreEngine.listMultipart(task.getBucketName(), task.getObjectKey(), task.getUploadId());
+        List<PartSummary> parts = partListing.getParts();
+        if(parts.size() != task.getChunkNum()){
+            //上传的分片数量和记录中不对应，合并失败
+            throw new BizException(BizCodeEnum.FILE_CHUNK_NOT_ENOUGH);
+        }
+
+        //检查更新存储空间
+        StorageDO storageDO = storageMapper.selectOne(new QueryWrapper<>(new StorageDO())
+                .eq("account_id", req.getAccountId()));
+        long realFileTotalSize = parts.stream().map(PartSummary::getSize).mapToLong(Long::valueOf).sum();
+        if(storageDO.getUsedSize() + realFileTotalSize > storageDO.getTotalSize()){
+            throw new BizException(BizCodeEnum.FILE_STORAGE_NOT_ENOUGH);
+        }
+        storageDO.setUsedSize(storageDO.getUsedSize() +realFileTotalSize);
+        storageMapper.updateById(storageDO);
+
+        //2-合并文件
+        CompleteMultipartUploadResult result = fileStoreEngine.mergeChunks(task.getBucketName(),
+                task.getObjectKey(), task.getUploadId(),
+                parts.stream().map(partSummary ->
+                                new PartETag(partSummary.getPartNumber(), partSummary.getETag()))
+                        .collect(Collectors.toList()));
+
+        //【判断是否合并成功
+        if(result.getETag()!=null){
+            FileUploadReq fileUploadReq = new FileUploadReq();
+            fileUploadReq.setAccountId(req.getAccountId())
+                    .setFilename(task.getFileName())
+                    .setIdentifier(task.getIdentifier())
+                    .setParentId(req.getParentId())
+                    .setFileSize(realFileTotalSize)
+                    .setFile(null);
+
+            //存储文件和关联信息到数据库
+            accountFileService.saveFileAndAccountFile(fileUploadReq,task.getObjectKey());
+
+            //删除相关任务记录
+            fileChunkMapper.deleteById(task.getId());
+
+            log.info("合并成功");
+        }
     }
 }

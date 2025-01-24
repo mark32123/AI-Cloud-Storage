@@ -1,6 +1,7 @@
 package net.xdclass.service;
 
 import net.xdclass.controller.req.FileChunkInitTaskReq;
+import net.xdclass.controller.req.FileChunkMergeReq;
 import net.xdclass.dto.FileChunkDTO;
 
 public interface FileChunkService {
@@ -21,4 +22,9 @@ public interface FileChunkService {
      */
     String genPreSignUploadUrl(Long accountId, String identifier, int partNumber);
 
+    /**
+     * 合并分片
+     * @param req
+     */
+    void mergeFileChunk(FileChunkMergeReq req);
 }

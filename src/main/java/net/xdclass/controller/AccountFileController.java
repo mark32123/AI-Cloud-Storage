@@ -169,6 +169,15 @@ public class AccountFileController {
         return JsonData.buildSuccess(url);
     }
 
+    /**
+     * 3-合并分片
+     */
+    @PostMapping("merge_file_chunk")
+    public JsonData mergeFileChunk(@RequestBody FileChunkMergeReq req) {
+        req.setAccountId(LoginInterceptor.threadLocal.get().getId());
+        fileChunkService.mergeFileChunk(req);
+        return JsonData.buildSuccess();
+    }
 
 
 }

@@ -568,6 +568,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      * @param req
      * @param storeFileObjectKey
      */
+    @Override
     public void saveFileAndAccountFile(FileUploadReq req, String storeFileObjectKey) {
         //保存文件
         FileDO fileDO = saveFile(req,storeFileObjectKey);
