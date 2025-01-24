@@ -157,6 +157,18 @@ public class AccountFileController {
         return JsonData.buildSuccess(fileChunkDTO);
     }
 
+    /**
+     * 2-获取分片上传地址，返回minio临时签名地址
+     */
+    @GetMapping("/get_file_chunk_upload_url/{identifier}/{partNumber}")
+    public JsonData getFileChunkUploadUrl(@PathVariable("identifier") String identifier
+            ,@PathVariable("partNumber") int partNumber){
+
+        Long accountId = LoginInterceptor.threadLocal.get().getId();
+        String url = fileChunkService.genPreSignUploadUrl(accountId, identifier, partNumber);
+        return JsonData.buildSuccess(url);
+    }
+
 
 
 }

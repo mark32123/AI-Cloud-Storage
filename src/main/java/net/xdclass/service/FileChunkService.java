@@ -10,4 +10,15 @@ public interface FileChunkService {
      * @return
      */
     FileChunkDTO initFileChunkTask(FileChunkInitTaskReq req);
+
+
+    /**
+     * 获取临时文件上传地址
+     * @param accountId
+     * @param identifier
+     * @param partNumber
+     * @return
+     */
+    String genPreSignUploadUrl(Long accountId, String identifier, int partNumber);
+
 }

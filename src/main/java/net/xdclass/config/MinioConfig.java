@@ -35,7 +35,7 @@ public class MinioConfig {
     private String avatarBucketName;
 
     //预签名的URL过期时间 ms 毫秒
-    private Long PRE_SING_URL_EXPIRE_TIME = 60 * 10 * 1000L;
+    private Long preSignUrlExpireTime = 60 * 10 * 1000L;
 
 //
 //    @Bean

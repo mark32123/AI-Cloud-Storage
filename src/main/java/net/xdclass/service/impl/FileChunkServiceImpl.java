@@ -1,8 +1,12 @@
 package net.xdclass.service.impl;
 
+import cn.hutool.core.date.DateTime;
+import cn.hutool.core.date.DateUtil;
+import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import lombok.extern.slf4j.Slf4j;
 import net.xdclass.component.StoreEngine;
 import net.xdclass.config.MinioConfig;
 import net.xdclass.controller.req.FileChunkInitTaskReq;
@@ -21,7 +25,11 @@ import org.springframework.http.MediaTypeFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 小滴课堂,愿景：让技术不再难学
@@ -32,6 +40,7 @@ import java.util.ArrayList;
  * @Version 1.0
  **/
 @Service
+@Slf4j
 public class FileChunkServiceImpl implements FileChunkService {
 
     @Autowired
@@ -96,5 +105,31 @@ public class FileChunkServiceImpl implements FileChunkService {
 
 
         return new FileChunkDTO(task).setFinished(false).setExitPartList(new ArrayList<>());
+    }
+
+    @Override
+    public String genPreSignUploadUrl(Long accountId, String identifier, int partNumber) {
+
+        FileChunkDO task = fileChunkMapper.selectOne(new QueryWrapper<FileChunkDO>()
+                .eq("account_id", accountId)
+                .eq("identifier", identifier));
+
+        if(task == null){
+            throw new BizException(BizCodeEnum.FILE_CHUNK_TASK_NOT_EXISTS);
+        }
+
+        //配置预签名过期时间
+        DateTime expireTime = DateUtil.offsetMillisecond(new Date(), minioConfig.getPreSignUrlExpireTime().intValue());
+
+        //生成签名URL
+        Map<String,Object> params = new HashMap<>();
+        params.put("partNumber",partNumber);
+        params.put("uploadId",task.getUploadId());
+        URL preSignedUrl = fileStoreEngine
+                .genePreSignedUrl(task.getBucketName(), task.getObjectKey(), HttpMethod.PUT, expireTime, params);
+
+        log.info("preSignedUrl:{}",preSignedUrl);
+
+        return preSignedUrl.toString();
     }
 }
