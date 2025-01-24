@@ -40,7 +40,7 @@ public class FileChunkUploadTest {
 
     private Long accountId = 1877928107881652225L;
 
-    private String identifier = "fdsfadsfadsfasd";
+    private String identifier = "dddfdsfadsfadsfasddd";
 
     /**
      * 存储分片后端文件路径
