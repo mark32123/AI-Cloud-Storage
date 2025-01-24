@@ -5,13 +5,16 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import net.xdclass.controller.req.*;
 import net.xdclass.dto.AccountFileDTO;
+import net.xdclass.dto.FileChunkDTO;
 import net.xdclass.dto.FolderTreeNodeDTO;
 import net.xdclass.interceptor.LoginInterceptor;
 import net.xdclass.service.AccountFileService;
+import net.xdclass.service.FileChunkService;
 import net.xdclass.util.JsonData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -29,6 +32,9 @@ public class AccountFileController {
 
     @Autowired
     private AccountFileService accountFileService;
+
+    @Autowired
+    private FileChunkService fileChunkService;
 
     /**
      * 查询文件列表接口
@@ -139,6 +145,18 @@ public class AccountFileController {
         Boolean flag = accountFileService.secondUpload(req);
         return JsonData.buildSuccess(flag);
     }
+
+
+    /**
+     * 1-创建分片上传任务
+     */
+    @PostMapping("init_file_chunk_task")
+    public JsonData initFileChunkTask(@RequestBody FileChunkInitTaskReq req) {
+        req.setAccountId(LoginInterceptor.threadLocal.get().getId());
+        FileChunkDTO fileChunkDTO = fileChunkService.initFileChunkTask(req);
+        return JsonData.buildSuccess(fileChunkDTO);
+    }
+
 
 
 }

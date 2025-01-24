@@ -2,6 +2,7 @@ package net.xdclass.service;
 
 import net.xdclass.controller.req.*;
 import net.xdclass.dto.AccountFileDTO;
+import net.xdclass.dto.FileChunkDTO;
 import net.xdclass.dto.FolderTreeNodeDTO;
 
 import java.util.List;
@@ -73,4 +74,6 @@ public interface AccountFileService {
      * @return
      */
     Boolean secondUpload(FileSecondUploadReq req);
+
+
 }

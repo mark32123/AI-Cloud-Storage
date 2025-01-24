@@ -9,6 +9,7 @@ import java.util.Date;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * <p>
@@ -22,6 +23,7 @@ import lombok.Setter;
 @Setter
 @TableName("file_chunk")
 @Schema(name = "FileChunkDO", description = "文件分片信息表")
+@Accessors(chain = true)
 public class FileChunkDO implements Serializable {
 
     private static final long serialVersionUID = 1L;

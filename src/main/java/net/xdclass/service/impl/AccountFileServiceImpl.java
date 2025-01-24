@@ -9,6 +9,7 @@ import net.xdclass.config.MinioConfig;
 import net.xdclass.controller.req.*;
 import net.xdclass.dto.AccountDTO;
 import net.xdclass.dto.AccountFileDTO;
+import net.xdclass.dto.FileChunkDTO;
 import net.xdclass.dto.FolderTreeNodeDTO;
 import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.enums.FileTypeEnum;
@@ -410,6 +411,7 @@ public class AccountFileServiceImpl implements AccountFileService {
         }
         return false;
     }
+
 
     /**
      * 包括递归处理，生成新的ID
