@@ -7,20 +7,19 @@ import net.xdclass.config.AccountConfig;
 import net.xdclass.controller.req.ShareCancelReq;
 import net.xdclass.controller.req.ShareCheckReq;
 import net.xdclass.controller.req.ShareCreateReq;
-import net.xdclass.dto.AccountDTO;
-import net.xdclass.dto.ShareAccountDTO;
-import net.xdclass.dto.ShareDTO;
-import net.xdclass.dto.ShareSimpleDTO;
+import net.xdclass.dto.*;
 import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.enums.ShareDayTypeEnum;
 import net.xdclass.enums.ShareStatusEnum;
 import net.xdclass.enums.ShareTypeEnum;
 import net.xdclass.exception.BizException;
 import net.xdclass.interceptor.LoginInterceptor;
+import net.xdclass.mapper.AccountFileMapper;
 import net.xdclass.mapper.AccountMapper;
 import net.xdclass.mapper.ShareFileMapper;
 import net.xdclass.mapper.ShareMapper;
 import net.xdclass.model.AccountDO;
+import net.xdclass.model.AccountFileDO;
 import net.xdclass.model.ShareDO;
 import net.xdclass.model.ShareFileDO;
 import net.xdclass.service.AccountFileService;
@@ -61,6 +60,10 @@ public class ShareServiceImpl implements ShareService {
 
     @Autowired
     private AccountMapper accountMapper;
+
+    @Autowired
+    private AccountFileMapper accountFileMapper;
+
 
     @Override
     public List<ShareDTO> listShare() {
@@ -197,6 +200,44 @@ public class ShareServiceImpl implements ShareService {
             }
         }
         return null;
+    }
+
+    /**
+     * 分享详情接口
+     * * 查询分享记录实体
+     * * 检查分享状态
+     * * 查询分享文件信息
+     * * 查询分享者信息
+     * * 构造分析详情对象返回
+     * @param shareId
+     * @return
+     */
+    @Override
+    public ShareDetailDTO detail(Long shareId) {
+        //查询分享记录实体
+        ShareDO shareDO = checkShareStatus(shareId);
+        ShareDetailDTO shareDetailDTO = SpringBeanUtil.copyProperties(shareDO, ShareDetailDTO.class);
+
+        //查询分享文件信息
+        List<AccountFileDO> accountFileDOList = getShareFileInfo(shareId);
+        List<AccountFileDTO> accountFileDTOList = SpringBeanUtil.copyProperties(accountFileDOList, AccountFileDTO.class);
+        shareDetailDTO.setFileDTOList(accountFileDTOList);
+
+        //查询分享者信息
+        ShareAccountDTO shareAccountDTO = getShareAccount(shareDO.getAccountId());
+        shareDetailDTO.setShareAccountDTO(shareAccountDTO);
+        return shareDetailDTO;
+    }
+
+    private List<AccountFileDO> getShareFileInfo(Long shareId) {
+
+        //找分享文件列表
+        List<ShareFileDO> shareFileDOS = shareFileMapper.selectList(new QueryWrapper<ShareFileDO>().select("account_file_id")
+                .eq("share_id", shareId));
+        List<Long> shareFileIdList = shareFileDOS.stream().map(ShareFileDO::getAccountFileId).toList();
+
+        //查找文件对象
+        return accountFileMapper.selectBatchIds(shareFileIdList);
     }
 
     /**

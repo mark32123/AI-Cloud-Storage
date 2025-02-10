@@ -4,6 +4,7 @@ import net.xdclass.controller.req.ShareCancelReq;
 import net.xdclass.controller.req.ShareCheckReq;
 import net.xdclass.controller.req.ShareCreateReq;
 import net.xdclass.dto.ShareDTO;
+import net.xdclass.dto.ShareDetailDTO;
 import net.xdclass.dto.ShareSimpleDTO;
 
 import java.util.List;
@@ -19,4 +20,6 @@ public interface ShareService {
     ShareSimpleDTO simpleDetail(Long shareId);
 
     String checkShareCode(ShareCheckReq req);
+
+    ShareDetailDTO detail(Long shareId);
 }

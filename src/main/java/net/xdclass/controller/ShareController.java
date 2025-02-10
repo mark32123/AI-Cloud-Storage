@@ -5,6 +5,7 @@ import net.xdclass.controller.req.ShareCancelReq;
 import net.xdclass.controller.req.ShareCheckReq;
 import net.xdclass.controller.req.ShareCreateReq;
 import net.xdclass.dto.ShareDTO;
+import net.xdclass.dto.ShareDetailDTO;
 import net.xdclass.dto.ShareSimpleDTO;
 import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.interceptor.LoginInterceptor;
@@ -92,6 +93,17 @@ public class ShareController {
             return JsonData.buildResult(BizCodeEnum.SHARE_NOT_EXIST);
         }
         return JsonData.buildSuccess(shareToken);
+    }
+
+
+    /**
+     * 查看分享详情接口
+     */
+    @GetMapping("detail")
+    public JsonData detail(){
+        Long shareId = 1;
+        ShareDetailDTO shareDetailDTO  = shareService.detail(shareId);
+        return JsonData.buildSuccess(shareDetailDTO);
     }
 
 
