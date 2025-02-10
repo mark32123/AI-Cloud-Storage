@@ -20,7 +20,6 @@ import net.xdclass.model.FileChunkDO;
 import net.xdclass.model.StorageDO;
 import net.xdclass.service.AccountFileService;
 import net.xdclass.service.FileChunkService;
-import net.xdclass.service.FileService;
 import net.xdclass.util.CommonUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
