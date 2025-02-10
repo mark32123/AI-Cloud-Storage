@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import net.xdclass.controller.req.ShareCancelReq;
 import net.xdclass.controller.req.ShareCreateReq;
 import net.xdclass.dto.ShareDTO;
+import net.xdclass.dto.ShareSimpleDTO;
 import net.xdclass.interceptor.LoginInterceptor;
 import net.xdclass.service.ShareService;
 import net.xdclass.util.JsonData;
@@ -63,6 +64,20 @@ public class ShareController {
 
         return JsonData.buildSuccess();
     }
+
+
+    /**
+     * 访问分享接口,返回基本的分享信息
+     * 情况一：如果链接不需要校验码，则一并返回token
+     * 情况二：如果链接需要校验码，则返回校验码，调用对应接口校验码，再返回token
+     */
+    @GetMapping("visit")
+    public JsonData visit(@RequestParam(value = "shareId") Long shareId){
+
+        ShareSimpleDTO shareSimpleDTO = shareService.simpleDetail(shareId);
+        return JsonData.buildSuccess(shareSimpleDTO);
+    }
+
 
 
 }

@@ -7,19 +7,24 @@ import net.xdclass.config.AccountConfig;
 import net.xdclass.controller.req.ShareCancelReq;
 import net.xdclass.controller.req.ShareCreateReq;
 import net.xdclass.dto.AccountDTO;
+import net.xdclass.dto.ShareAccountDTO;
 import net.xdclass.dto.ShareDTO;
+import net.xdclass.dto.ShareSimpleDTO;
 import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.enums.ShareDayTypeEnum;
 import net.xdclass.enums.ShareStatusEnum;
 import net.xdclass.enums.ShareTypeEnum;
 import net.xdclass.exception.BizException;
 import net.xdclass.interceptor.LoginInterceptor;
+import net.xdclass.mapper.AccountMapper;
 import net.xdclass.mapper.ShareFileMapper;
 import net.xdclass.mapper.ShareMapper;
+import net.xdclass.model.AccountDO;
 import net.xdclass.model.ShareDO;
 import net.xdclass.model.ShareFileDO;
 import net.xdclass.service.AccountFileService;
 import net.xdclass.service.ShareService;
+import net.xdclass.util.JwtUtil;
 import net.xdclass.util.SpringBeanUtil;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +57,9 @@ public class ShareServiceImpl implements ShareService {
 
     @Autowired
     private AccountFileService fileService;
+
+    @Autowired
+    private AccountMapper accountMapper;
 
     @Override
     public List<ShareDTO> listShare() {
@@ -139,5 +147,73 @@ public class ShareServiceImpl implements ShareService {
         //删除分享详情
         shareFileMapper.delete(new QueryWrapper<ShareFileDO>().in("share_id", req.getShareIds()));
 
+    }
+
+    /**
+     * * 检查分享状态
+     * * 查询分享记录实体
+     * * 查询分享者信息
+     * * 判断是否需要生成校验码,不需要的话可以直接生成分享token
+     * @param shareId
+     * @return
+     */
+    @Override
+    public ShareSimpleDTO simpleDetail(Long shareId) {
+
+        // 检查分享状态
+        ShareDO shareDO = checkShareStatus(shareId);
+
+        ShareSimpleDTO shareSimpleDTO = SpringBeanUtil.copyProperties(shareDO, ShareSimpleDTO.class);
+
+        //查询分享者信息
+        ShareAccountDTO shareAccountDTO = getShareAccount(shareDO.getAccountId());
+
+        shareSimpleDTO.setShareAccountDTO(shareAccountDTO);
+
+        //判断是否需要校验码
+        if(ShareTypeEnum.NO_CODE.name().equalsIgnoreCase(shareDO.getShareType())){
+            //直接生成分享token
+            String shareToken = JwtUtil.geneShareJWT(shareDO.getId());
+            shareSimpleDTO.setShareToken(shareToken);
+        }
+        return shareSimpleDTO;
+    }
+
+    /**
+     * 获取分享者信息
+     * @param accountId
+     * @return
+     */
+    private ShareAccountDTO getShareAccount(Long accountId) {
+        if(accountId != null){
+            AccountDO accountDO = accountMapper.selectById(accountId);
+            if(accountDO != null){
+                return SpringBeanUtil.copyProperties(accountDO, ShareAccountDTO.class);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 检查分享状态
+     * @param shareId
+     * @return
+     */
+    private ShareDO checkShareStatus(Long shareId) {
+        ShareDO shareDO = shareMapper.selectById(shareId);
+
+        if(shareDO == null){
+            log.error("分享链接不存在:{}",shareId);
+            throw new BizException(BizCodeEnum.SHARE_NOT_EXIST);
+        }
+        if(ShareStatusEnum.EXPIRED.name().equalsIgnoreCase(shareDO.getShareStatus())){
+            log.error("分享链接已失效:{}",shareId);
+            throw new BizException(BizCodeEnum.SHARE_EXPIRED);
+        }
+        if(ShareStatusEnum.CANCELED.name().equalsIgnoreCase(shareDO.getShareStatus())){
+            log.error("分享链接已取消:{}",shareId);
+            throw new BizException(BizCodeEnum.SHARE_CANCELED);
+        }
+        return  shareDO;
     }
 }
