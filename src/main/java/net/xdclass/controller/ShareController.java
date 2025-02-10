@@ -1,6 +1,7 @@
 package net.xdclass.controller;
 
 import lombok.AllArgsConstructor;
+import net.xdclass.controller.req.ShareCancelReq;
 import net.xdclass.controller.req.ShareCreateReq;
 import net.xdclass.dto.ShareDTO;
 import net.xdclass.interceptor.LoginInterceptor;
@@ -47,6 +48,20 @@ public class ShareController {
         ShareDTO shareDTO = shareService.createShare(req);
 
         return JsonData.buildSuccess(shareDTO);
+    }
+
+
+    /**
+     * 取消分享
+     */
+    @PostMapping("cancel")
+    public JsonData cancel(@RequestBody ShareCancelReq req){
+
+        req.setAccountId(LoginInterceptor.threadLocal.get().getId());
+
+        shareService.cancelShare(req);
+
+        return JsonData.buildSuccess();
     }
 
 

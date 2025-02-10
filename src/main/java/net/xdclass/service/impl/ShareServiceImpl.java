@@ -4,12 +4,15 @@ import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.xdclass.config.AccountConfig;
+import net.xdclass.controller.req.ShareCancelReq;
 import net.xdclass.controller.req.ShareCreateReq;
 import net.xdclass.dto.AccountDTO;
 import net.xdclass.dto.ShareDTO;
+import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.enums.ShareDayTypeEnum;
 import net.xdclass.enums.ShareStatusEnum;
 import net.xdclass.enums.ShareTypeEnum;
+import net.xdclass.exception.BizException;
 import net.xdclass.interceptor.LoginInterceptor;
 import net.xdclass.mapper.ShareFileMapper;
 import net.xdclass.mapper.ShareMapper;
@@ -118,5 +121,23 @@ public class ShareServiceImpl implements ShareService {
         });
         shareFileMapper.insertBatch(shareFileDOS);
         return SpringBeanUtil.copyProperties(shareDO, ShareDTO.class);
+    }
+
+    @Override
+    public void cancelShare(ShareCancelReq req) {
+
+        List<ShareDO> shareDOList = shareMapper.selectList(new QueryWrapper<ShareDO>()
+                .eq("account_id", req.getAccountId()).in("id", req.getShareIds()));
+
+        if(shareDOList.size() != req.getShareIds().size()){
+            log.error("cancelShare,shareIds:{}",req.getShareIds());
+            throw new BizException(BizCodeEnum.SHARE_CANCEL_ILLEGAL);
+        }
+        // 删除分享链接
+        shareMapper.deleteBatchIds(req.getShareIds());
+
+        //删除分享详情
+        shareFileMapper.delete(new QueryWrapper<ShareFileDO>().in("share_id", req.getShareIds()));
+
     }
 }

@@ -1,5 +1,6 @@
 package net.xdclass.service;
 
+import net.xdclass.controller.req.ShareCancelReq;
 import net.xdclass.controller.req.ShareCreateReq;
 import net.xdclass.dto.ShareDTO;
 
@@ -10,4 +11,6 @@ public interface ShareService {
     List<ShareDTO> listShare();
 
     ShareDTO createShare(ShareCreateReq req);
+
+    void cancelShare(ShareCancelReq req);
 }
