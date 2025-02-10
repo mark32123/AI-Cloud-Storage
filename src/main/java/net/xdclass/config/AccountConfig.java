@@ -30,4 +30,10 @@ public class AccountConfig {
      */
     public static final Long ROOT_PARENT_ID = 0L;
 
+
+    /**
+     * 网盘前端地址
+     */
+    public static final String PAN_FRONT_DOMAIN_SHARE_API = "127.0.0.1:9999/share/";
+
 }

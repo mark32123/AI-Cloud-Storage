@@ -4,6 +4,7 @@ import net.xdclass.controller.req.*;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.FileChunkDTO;
 import net.xdclass.dto.FolderTreeNodeDTO;
+import net.xdclass.model.AccountFileDO;
 
 import java.util.List;
 
@@ -82,5 +83,14 @@ public interface AccountFileService {
      * @param storeFileObjectKey
      */
      void saveFileAndAccountFile(FileUploadReq req, String storeFileObjectKey);
+
+
+    /**
+     * 检查文件id是否合法
+     * @param fileIds
+     * @param accountId
+     * @return
+     */
+     List<AccountFileDO> checkFileIdLegal(List<Long> fileIds, Long accountId);
 
     }

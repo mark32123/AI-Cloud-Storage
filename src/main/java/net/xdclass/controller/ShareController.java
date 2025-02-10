@@ -1,13 +1,13 @@
 package net.xdclass.controller;
 
 import lombok.AllArgsConstructor;
+import net.xdclass.controller.req.ShareCreateReq;
 import net.xdclass.dto.ShareDTO;
+import net.xdclass.interceptor.LoginInterceptor;
 import net.xdclass.service.ShareService;
 import net.xdclass.util.JsonData;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -36,6 +36,18 @@ public class ShareController {
         return JsonData.buildSuccess(list);
     }
 
+    /**
+     * 创建分享链接
+     */
+    @PostMapping("create")
+    public JsonData create(@RequestBody ShareCreateReq req){
+
+        req.setAccountId(LoginInterceptor.threadLocal.get().getId());
+
+        ShareDTO shareDTO = shareService.createShare(req);
+
+        return JsonData.buildSuccess(shareDTO);
+    }
 
 
 }

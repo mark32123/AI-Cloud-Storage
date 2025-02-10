@@ -549,7 +549,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      * @param accountId
      * @return
      */
-    private List<AccountFileDO> checkFileIdLegal(List<Long> fileIds, Long accountId) {
+    public List<AccountFileDO> checkFileIdLegal(List<Long> fileIds, Long accountId) {
 
         List<AccountFileDO> accountFileDOList = accountFileMapper
                 .selectList(new QueryWrapper<AccountFileDO>().in("id", fileIds).eq("account_id", accountId));
