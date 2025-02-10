@@ -93,4 +93,12 @@ public interface AccountFileService {
      */
      List<AccountFileDO> checkFileIdLegal(List<Long> fileIds, Long accountId);
 
+    /**
+     * 递归查找文件
+     * @param allAccountFileDOList
+     * @param prepareAccountFileDOList
+     * @param onlyFolder
+     */
+     void findAllAccountFileDOWithRecur(List<AccountFileDO> allAccountFileDOList, List<AccountFileDO> prepareAccountFileDOList, boolean onlyFolder);
+
     }

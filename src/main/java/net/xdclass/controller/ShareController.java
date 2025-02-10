@@ -6,6 +6,8 @@ import net.xdclass.aspect.ShareCodeAspect;
 import net.xdclass.controller.req.ShareCancelReq;
 import net.xdclass.controller.req.ShareCheckReq;
 import net.xdclass.controller.req.ShareCreateReq;
+import net.xdclass.controller.req.ShareFileQueryReq;
+import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.ShareDTO;
 import net.xdclass.dto.ShareDetailDTO;
 import net.xdclass.dto.ShareSimpleDTO;
@@ -107,6 +109,19 @@ public class ShareController {
         ShareDetailDTO shareDetailDTO  = shareService.detail(ShareCodeAspect.get());
         return JsonData.buildSuccess(shareDetailDTO);
     }
+
+
+    /**
+     * 查看某个分享文件夹下的文件列表
+     */
+    @PostMapping("list_share_file")
+    @ShareCodeCheck
+    public JsonData listShareFile(@RequestBody ShareFileQueryReq req){
+        req.setShareId(ShareCodeAspect.get());
+        List<AccountFileDTO> list = shareService.listShareFile(req);
+        return JsonData.buildSuccess(list);
+    }
+
 
 
 }

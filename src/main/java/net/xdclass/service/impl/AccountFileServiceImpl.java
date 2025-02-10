@@ -524,7 +524,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      * @param prepareAccountFileDOList 待查询的文件和文件夹
      * @param onlyFolder 控制是否只存储文件
      */
-    private void findAllAccountFileDOWithRecur(List<AccountFileDO> allAccountFileDOList, List<AccountFileDO> prepareAccountFileDOList, boolean onlyFolder) {
+    public void findAllAccountFileDOWithRecur(List<AccountFileDO> allAccountFileDOList, List<AccountFileDO> prepareAccountFileDOList, boolean onlyFolder) {
 
         for(AccountFileDO accountFileDO : prepareAccountFileDOList){
             if(Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())){

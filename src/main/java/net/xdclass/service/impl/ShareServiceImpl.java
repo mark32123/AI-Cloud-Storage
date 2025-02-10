@@ -7,6 +7,7 @@ import net.xdclass.config.AccountConfig;
 import net.xdclass.controller.req.ShareCancelReq;
 import net.xdclass.controller.req.ShareCheckReq;
 import net.xdclass.controller.req.ShareCreateReq;
+import net.xdclass.controller.req.ShareFileQueryReq;
 import net.xdclass.dto.*;
 import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.enums.ShareDayTypeEnum;
@@ -30,12 +31,12 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 小滴课堂,愿景：让技术不再难学
@@ -227,6 +228,64 @@ public class ShareServiceImpl implements ShareService {
         ShareAccountDTO shareAccountDTO = getShareAccount(shareDO.getAccountId());
         shareDetailDTO.setShareAccountDTO(shareAccountDTO);
         return shareDetailDTO;
+    }
+
+    /**
+     * * 检查分享链接状态
+     * * 查询分享ID是否在分享的文件列表中（需要获取分享文件列表的全部文件夹和子文件夹）
+     * * 分组后获取某个文件夹下面所有的子文件夹
+     * * 根据父文件夹ID获取子文件夹列表
+     * @param req
+     * @return
+     */
+    @Override
+    public List<AccountFileDTO> listShareFile(ShareFileQueryReq req) {
+        //检查分享链接状态
+        ShareDO shareDO = checkShareStatus(req.getShareId());
+
+        //查询分享ID是否在分享的文件列表中（需要获取分享文件列表的全部文件夹和子文件夹）
+        List<AccountFileDO> accountFileDOList =  checkShareFileIdOnStatus(shareDO.getId(), List.of(req.getParentId()));
+
+        List<AccountFileDTO> accountFileDTOList = SpringBeanUtil.copyProperties(accountFileDOList, AccountFileDTO.class);
+
+        //分组后获取某个文件夹下面所有的子文件夹
+        Map<Long, List<AccountFileDTO>> fileListMap = accountFileDTOList.stream()
+                .collect(Collectors.groupingBy(AccountFileDTO::getParentId));
+
+        //根据父文件夹ID获取子文件夹列表
+        List<AccountFileDTO> childFileList = fileListMap.get(req.getParentId());
+
+        if(CollectionUtils.isEmpty(childFileList)){
+            return List.of();
+        }
+
+        return childFileList;
+    }
+
+    /**
+     * 返回分享的文件列表，包括子文件
+     * @param shareId
+     * @param fileIdList
+     * @return
+     */
+    private List<AccountFileDO> checkShareFileIdOnStatus(Long shareId, List<Long> fileIdList) {
+        //需要获取分享文件列表的全部文件夹和子文件内容
+        List<AccountFileDO>  shareFileInfoList = getShareFileInfo(shareId);
+        List<AccountFileDO> allAccountFileDOList = new ArrayList<>();
+        //获取全部文件，递归
+        fileService.findAllAccountFileDOWithRecur(allAccountFileDOList, shareFileInfoList, false);
+
+        if(CollectionUtils.isEmpty(allAccountFileDOList)){
+            return List.of();
+        }
+
+        //把分享的对象文件的全部文件夹放到集合里面，判断目标文件集合是否都在里面
+        Set<Long> allFileIdSet = allAccountFileDOList.stream().map(AccountFileDO::getId).collect(Collectors.toSet());
+        if(!allFileIdSet.containsAll(fileIdList)){
+            log.error("目标文件ID列表 不再 分享的文件列表中,{}",fileIdList);
+            throw new BizException(BizCodeEnum.SHARE_FILE_ILLEGAL);
+        }
+        return allAccountFileDOList;
     }
 
     private List<AccountFileDO> getShareFileInfo(Long shareId) {
