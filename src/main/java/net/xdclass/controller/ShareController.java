@@ -2,9 +2,11 @@ package net.xdclass.controller;
 
 import lombok.AllArgsConstructor;
 import net.xdclass.controller.req.ShareCancelReq;
+import net.xdclass.controller.req.ShareCheckReq;
 import net.xdclass.controller.req.ShareCreateReq;
 import net.xdclass.dto.ShareDTO;
 import net.xdclass.dto.ShareSimpleDTO;
+import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.interceptor.LoginInterceptor;
 import net.xdclass.service.ShareService;
 import net.xdclass.util.JsonData;
@@ -78,6 +80,19 @@ public class ShareController {
         return JsonData.buildSuccess(shareSimpleDTO);
     }
 
+
+    /**
+     * 校验分享码，返回临时token
+     */
+    @PostMapping("check_share_code")
+    public JsonData checkShareCode(@RequestBody ShareCheckReq req){
+
+        String shareToken = shareService.checkShareCode(req);
+        if(shareToken == null){
+            return JsonData.buildResult(BizCodeEnum.SHARE_NOT_EXIST);
+        }
+        return JsonData.buildSuccess(shareToken);
+    }
 
 
 }

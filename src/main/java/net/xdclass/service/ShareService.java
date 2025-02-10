@@ -1,6 +1,7 @@
 package net.xdclass.service;
 
 import net.xdclass.controller.req.ShareCancelReq;
+import net.xdclass.controller.req.ShareCheckReq;
 import net.xdclass.controller.req.ShareCreateReq;
 import net.xdclass.dto.ShareDTO;
 import net.xdclass.dto.ShareSimpleDTO;
@@ -16,4 +17,6 @@ public interface ShareService {
     void cancelShare(ShareCancelReq req);
 
     ShareSimpleDTO simpleDetail(Long shareId);
+
+    String checkShareCode(ShareCheckReq req);
 }

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.xdclass.config.AccountConfig;
 import net.xdclass.controller.req.ShareCancelReq;
+import net.xdclass.controller.req.ShareCheckReq;
 import net.xdclass.controller.req.ShareCreateReq;
 import net.xdclass.dto.AccountDTO;
 import net.xdclass.dto.ShareAccountDTO;
@@ -177,6 +178,25 @@ public class ShareServiceImpl implements ShareService {
             shareSimpleDTO.setShareToken(shareToken);
         }
         return shareSimpleDTO;
+    }
+
+    @Override
+    public String checkShareCode(ShareCheckReq req) {
+
+        ShareDO shareDO = shareMapper.selectOne(new QueryWrapper<ShareDO>()
+                .eq("id", req.getShareId()).eq("share_code", req.getShareCode())
+                .eq("share_status", ShareStatusEnum.USED.name()));
+        if(shareDO != null){
+            //判断是否过期
+            if(shareDO.getShareEndTime().getTime() > System.currentTimeMillis()){
+                //生成分享token
+                return JwtUtil.geneShareJWT(shareDO.getId());
+            }else {
+                log.error("分享链接已失效:{}",req.getShareId());
+                throw new BizException(BizCodeEnum.SHARE_EXPIRED);
+            }
+        }
+        return null;
     }
 
     /**
