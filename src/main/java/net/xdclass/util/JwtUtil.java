@@ -29,7 +29,7 @@ public class JwtUtil {
     private static final String SHARE_SUBJECT = "XDCLASS_SHARE";
 
     //分享ID
-    private static final String CLAIM_SHARE_KEY = "SHARE_ID";
+    public static final String CLAIM_SHARE_KEY = "SHARE_ID";
 
     //分享token过期时间，1小时
     private static final long SHARE_TOKEN_EXPIRE = 1000 * 60 * 60;

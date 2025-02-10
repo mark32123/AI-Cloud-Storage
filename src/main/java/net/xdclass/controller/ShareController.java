@@ -1,6 +1,8 @@
 package net.xdclass.controller;
 
 import lombok.AllArgsConstructor;
+import net.xdclass.annotation.ShareCodeCheck;
+import net.xdclass.aspect.ShareCodeAspect;
 import net.xdclass.controller.req.ShareCancelReq;
 import net.xdclass.controller.req.ShareCheckReq;
 import net.xdclass.controller.req.ShareCreateReq;
@@ -100,9 +102,9 @@ public class ShareController {
      * 查看分享详情接口
      */
     @GetMapping("detail")
+    @ShareCodeCheck
     public JsonData detail(){
-        Long shareId = 1;
-        ShareDetailDTO shareDetailDTO  = shareService.detail(shareId);
+        ShareDetailDTO shareDetailDTO  = shareService.detail(ShareCodeAspect.get());
         return JsonData.buildSuccess(shareDetailDTO);
     }
 
