@@ -1,13 +1,12 @@
 package net.xdclass.controller;
 
+import net.xdclass.controller.req.RecycleDelReq;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.interceptor.LoginInterceptor;
 import net.xdclass.service.RecycleService;
 import net.xdclass.util.JsonData;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -37,6 +36,21 @@ public class RecycleController {
 
         return JsonData.buildSuccess(list);
     }
+
+
+    /**
+     * 彻底删除回收站文件
+     */
+    @PostMapping("delete")
+    public JsonData delete(@RequestBody RecycleDelReq req){
+
+        req.setAccountId(LoginInterceptor.threadLocal.get().getId());
+
+        recycleService.delete(req);
+
+        return JsonData.buildSuccess();
+    }
+
 
 
 }

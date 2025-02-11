@@ -34,6 +34,18 @@
         </foreach>
 
     </insert>
+
+
+    <!--彻底删除文件-->
+    <delete id="deleteRecycleFiles">
+
+        DELETE FROM account_file WHERE del=1 and id IN
+        <foreach collection="recycleFileIds" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+
     <!--查询被删除的文件，根据accountid-->
     <select id="selectRecycleFiles" resultType="net.xdclass.model.AccountFileDO">
         SELECT * FROM account_file WHERE account_id = #{accountId} AND del = 1
@@ -43,6 +55,11 @@
                 #{item}
             </foreach>
         </if>
+
+    </select>
+
+    <select id="selectRecycleChildFiles" resultType="net.xdclass.model.AccountFileDO">
+        SELECT * FROM account_file WHERE parent_id = #{parentId} AND del = 1 and account_id=#{accountId}
 
     </select>
 

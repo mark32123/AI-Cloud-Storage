@@ -1,7 +1,11 @@
 package net.xdclass.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import net.xdclass.controller.req.RecycleDelReq;
 import net.xdclass.dto.AccountFileDTO;
+import net.xdclass.enums.BizCodeEnum;
+import net.xdclass.enums.FolderFlagEnum;
+import net.xdclass.exception.BizException;
 import net.xdclass.mapper.AccountFileMapper;
 import net.xdclass.model.AccountFileDO;
 import net.xdclass.service.RecycleService;
@@ -9,7 +13,9 @@ import net.xdclass.util.SpringBeanUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -27,6 +33,8 @@ public class RecycleServiceImpl implements RecycleService {
     @Autowired
     private AccountFileMapper accountFileMapper;
 
+
+
     @Override
     public List<AccountFileDTO> listRecycleFiles(Long accountId) {
         List<AccountFileDO> recycleList =  accountFileMapper.selectRecycleFiles(accountId,null);
@@ -40,5 +48,49 @@ public class RecycleServiceImpl implements RecycleService {
                 .collect(Collectors.toList());
 
         return SpringBeanUtil.copyProperties(accountFileDOS, AccountFileDTO.class);
+    }
+
+    /**
+     * 删除回收站内容
+     * * 文件ID数量是否合法
+     * * 判断文件是否是文件夹，文件夹的话需要递归获取里面子文件ID，然后进行批量删除
+     * * 批量删除回收站文件
+     * @param req
+     */
+    @Override
+    public void delete(RecycleDelReq req) {
+
+        List<AccountFileDO> records = accountFileMapper.selectRecycleFiles(req.getAccountId(), req.getFileIds());
+        //文件ID数量是否合法
+        if(req.getFileIds().size() != records.size()){
+            throw new BizException(BizCodeEnum.FILE_DEL_BATCH_ILLEGAL);
+        }
+
+        //判断文件是否是文件夹，文件夹的话需要递归获取里面子文件ID，然后进行批量删除
+        List<AccountFileDO> allRecords = new ArrayList<>();
+        //需要单独写查询文件夹和子文件夹的递归方法，需要del=1
+        findAllAccountFileDOWithRecur(allRecords, records, false);
+
+        List<Long> recycleFileIds = allRecords.stream().map(AccountFileDO::getId).toList();
+
+        //批量删除回收站文件
+        accountFileMapper.deleteRecycleFiles(recycleFileIds);
+
+    }
+
+    private void findAllAccountFileDOWithRecur(List<AccountFileDO> allRecords, List<AccountFileDO> records, boolean onlyFolder) {
+
+        for(AccountFileDO accountFileDO : records){
+            if(Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())){
+                //递归查找 del=1
+                List<AccountFileDO> childAccountFileDOList = accountFileMapper.selectRecycleChildFiles(accountFileDO.getId(),accountFileDO.getAccountId());
+                findAllAccountFileDOWithRecur(allRecords,childAccountFileDOList,onlyFolder);
+            }
+
+            //如果通过onlyFolder是true,只存储文件夹到allAccountFileDOList，否则都存储到allAccountFileDOList
+            if(!onlyFolder || Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())){
+                allRecords.add(accountFileDO);
+            }
+        }
     }
 }
