@@ -12,6 +12,7 @@ import net.xdclass.service.RecycleService;
 import net.xdclass.util.SpringBeanUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,6 +59,7 @@ public class RecycleServiceImpl implements RecycleService {
      * @param req
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void delete(RecycleDelReq req) {
 
         List<AccountFileDO> records = accountFileMapper.selectRecycleFiles(req.getAccountId(), req.getFileIds());
