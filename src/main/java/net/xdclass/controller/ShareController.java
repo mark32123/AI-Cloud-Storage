@@ -3,10 +3,7 @@ package net.xdclass.controller;
 import lombok.AllArgsConstructor;
 import net.xdclass.annotation.ShareCodeCheck;
 import net.xdclass.aspect.ShareCodeAspect;
-import net.xdclass.controller.req.ShareCancelReq;
-import net.xdclass.controller.req.ShareCheckReq;
-import net.xdclass.controller.req.ShareCreateReq;
-import net.xdclass.controller.req.ShareFileQueryReq;
+import net.xdclass.controller.req.*;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.ShareDTO;
 import net.xdclass.dto.ShareDetailDTO;
@@ -120,6 +117,20 @@ public class ShareController {
         req.setShareId(ShareCodeAspect.get());
         List<AccountFileDTO> list = shareService.listShareFile(req);
         return JsonData.buildSuccess(list);
+    }
+
+
+    /**
+     * 文件转存
+     */
+    @PostMapping("transfer")
+    @ShareCodeCheck
+    public JsonData transfer(@RequestBody ShareFileTransferReq req){
+
+        req.setShareId(ShareCodeAspect.get());
+        req.setAccountId(LoginInterceptor.threadLocal.get().getId());
+        shareService.transferShareFile(req);
+        return JsonData.buildSuccess();
     }
 
 

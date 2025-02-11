@@ -101,4 +101,23 @@ public interface AccountFileService {
      */
      void findAllAccountFileDOWithRecur(List<AccountFileDO> allAccountFileDOList, List<AccountFileDO> prepareAccountFileDOList, boolean onlyFolder);
 
+
+    /**
+     * 批量复制 或 转存
+     * @param accountFileDOList
+     * @param targetParentId
+     * @return
+     */
+    List<AccountFileDO> findBatchCopyFileWithRecur(List<AccountFileDO> accountFileDOList, Long targetParentId);
+
+
+    /**
+     * 检查容量是否足够
+     * @param accountId
+     * @param fileSize
+     * @return
+     */
+    boolean checkAndUpdateCapacity(Long accountId, Long fileSize);
+
+
     }

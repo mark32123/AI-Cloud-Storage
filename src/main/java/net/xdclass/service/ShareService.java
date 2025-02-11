@@ -1,9 +1,6 @@
 package net.xdclass.service;
 
-import net.xdclass.controller.req.ShareCancelReq;
-import net.xdclass.controller.req.ShareCheckReq;
-import net.xdclass.controller.req.ShareCreateReq;
-import net.xdclass.controller.req.ShareFileQueryReq;
+import net.xdclass.controller.req.*;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.ShareDTO;
 import net.xdclass.dto.ShareDetailDTO;
@@ -26,4 +23,6 @@ public interface ShareService {
     ShareDetailDTO detail(Long shareId);
 
     List<AccountFileDTO> listShareFile(ShareFileQueryReq req);
+
+    void transferShareFile(ShareFileTransferReq req);
 }

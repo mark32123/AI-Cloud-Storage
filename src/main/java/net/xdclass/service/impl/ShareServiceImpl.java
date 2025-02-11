@@ -4,10 +4,7 @@ import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.xdclass.config.AccountConfig;
-import net.xdclass.controller.req.ShareCancelReq;
-import net.xdclass.controller.req.ShareCheckReq;
-import net.xdclass.controller.req.ShareCreateReq;
-import net.xdclass.controller.req.ShareFileQueryReq;
+import net.xdclass.controller.req.*;
 import net.xdclass.dto.*;
 import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.enums.ShareDayTypeEnum;
@@ -262,6 +259,79 @@ public class ShareServiceImpl implements ShareService {
         return childFileList;
     }
 
+
+    /**
+     * * 分享链接是否状态准确
+     * * 转存的文件是否是分享链接里面的文件
+     * * 目标文件夹是否是当前用户的
+     * * 获取转存的文件
+     * * 保存需要转存的文件列表（递归子文件）
+     * * 同步更新所有文件的accountId为当前用户的id
+     * * 计算存储空间大小，检查是否足够
+     * * 更新关联对象信息，存储文件映射关系
+     * @param req
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void transferShareFile(ShareFileTransferReq req) {
+
+        //分享链接是否状态准确
+        checkShareStatus(req.getShareId());
+
+        //转存的文件是否是分享链接里面的文件
+        checkInShareFiles(req.getFileIds(),req.getShareId());
+
+        //目标文件夹是否是当前用户的
+        AccountFileDO currentAccountDO = accountFileMapper.selectOne(new QueryWrapper<AccountFileDO>()
+                .eq("id", req.getParentId()).eq("account_id", req.getAccountId()));
+        if(currentAccountDO == null){
+            log.error("目标文件夹不是当前用户的,{}",req);
+            throw new BizException(BizCodeEnum.FILE_NOT_EXISTS);
+        }
+
+        //获取转存的文件
+        List<AccountFileDO> shareFileList = accountFileMapper.selectBatchIds(req.getFileIds());
+        //保存需要转存的文件列表（递归子文件）
+        List<AccountFileDO> batchTransferFileList = fileService.findBatchCopyFileWithRecur(shareFileList, req.getParentId());
+
+        //同步更新所有文件的accountId为当前用户的id
+        batchTransferFileList.forEach(file -> {
+            file.setAccountId(req.getAccountId());
+        });
+
+        //计算存储空间大小，检查是否足够
+        if(!fileService.checkAndUpdateCapacity(req.getAccountId(),batchTransferFileList.stream().mapToLong(AccountFileDO::getFileSize).sum())){
+            throw new BizException(BizCodeEnum.FILE_STORAGE_NOT_ENOUGH);
+        }
+        //更新关联对象信息，存储文件映射关系
+        accountFileMapper.insertFileBatch(batchTransferFileList);
+
+
+    }
+
+    private void checkInShareFiles(List<Long> fileIds, Long shareId) {
+
+        //获取分享链接的文件
+        List<ShareFileDO> shareFileDOS = shareFileMapper.selectList(new QueryWrapper<ShareFileDO>().eq("share_id", shareId));
+        List<Long> shareFileIds = shareFileDOS.stream().map(ShareFileDO::getAccountFileId).toList();
+        //找文件实体
+        List<AccountFileDO> shareAccountFileDOList = accountFileMapper.selectBatchIds(shareFileIds);
+        //递归找分享链接里面的所有子文件
+        List<AccountFileDO> allShareFiles = new ArrayList<>();
+        fileService.findAllAccountFileDOWithRecur(allShareFiles, shareAccountFileDOList, false);
+        //提取全部文件的ID
+        List<Long> allShareFileIds = allShareFiles.stream().map(AccountFileDO::getId).toList();
+
+        //判断要转存的文件是否在里面
+        for (Long fileId : fileIds) {
+            if(!allShareFileIds.contains(fileId)){
+                log.error("文件不在分享链接里面，fileId:{}",fileId);
+                throw new BizException(BizCodeEnum.SHARE_FILE_ILLEGAL);
+            }
+        }
+
+    }
+
     /**
      * 返回分享的文件列表，包括子文件
      * @param shareId
@@ -326,13 +396,15 @@ public class ShareServiceImpl implements ShareService {
             log.error("分享链接不存在:{}",shareId);
             throw new BizException(BizCodeEnum.SHARE_NOT_EXIST);
         }
-        if(ShareStatusEnum.EXPIRED.name().equalsIgnoreCase(shareDO.getShareStatus())){
-            log.error("分享链接已失效:{}",shareId);
-            throw new BizException(BizCodeEnum.SHARE_EXPIRED);
-        }
+        //暂时未用，直接物理删除，可以调整
         if(ShareStatusEnum.CANCELED.name().equalsIgnoreCase(shareDO.getShareStatus())){
             log.error("分享链接已取消:{}",shareId);
             throw new BizException(BizCodeEnum.SHARE_CANCELED);
+        }
+        //判断分享是否过期
+        if(shareDO.getShareEndTime().before(new Date())){
+            log.error("分享链接已过期:{}",shareId);
+            throw new BizException(BizCodeEnum.SHARE_EXPIRED);
         }
         return  shareDO;
     }

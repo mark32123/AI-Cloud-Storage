@@ -269,7 +269,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      * @param fileSize
      * @return
      */
-    private boolean checkAndUpdateCapacity(Long accountId, Long fileSize) {
+    public boolean checkAndUpdateCapacity(Long accountId, Long fileSize) {
         StorageDO storageDO = storageMapper.selectOne(new QueryWrapper<StorageDO>().eq("account_id", accountId));
         Long totalSize = storageDO.getTotalSize();
         if(storageDO.getUsedSize() + fileSize <= totalSize){
@@ -419,7 +419,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      * @param targetParentId
      * @return
      */
-    private List<AccountFileDO> findBatchCopyFileWithRecur(List<AccountFileDO> accountFileDOList, Long targetParentId) {
+    public List<AccountFileDO> findBatchCopyFileWithRecur(List<AccountFileDO> accountFileDOList, Long targetParentId) {
         List<AccountFileDO> newAccountFileDOList = new ArrayList<>();
 
         accountFileDOList.forEach(accountFileDO -> doCopyChildRecord(newAccountFileDOList,accountFileDO,targetParentId));
