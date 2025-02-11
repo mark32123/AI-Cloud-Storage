@@ -300,7 +300,9 @@ public class ShareServiceImpl implements ShareService {
         });
 
         //计算存储空间大小，检查是否足够
-        if(!fileService.checkAndUpdateCapacity(req.getAccountId(),batchTransferFileList.stream().mapToLong(AccountFileDO::getFileSize).sum())){
+        if(!fileService.checkAndUpdateCapacity(req.getAccountId(),batchTransferFileList.stream()
+                .map(accountFileDO -> accountFileDO.getFileSize() == null ? 0 : accountFileDO.getFileSize())
+                .mapToLong(Long::valueOf).sum())){
             throw new BizException(BizCodeEnum.FILE_STORAGE_NOT_ENOUGH);
         }
         //更新关联对象信息，存储文件映射关系
