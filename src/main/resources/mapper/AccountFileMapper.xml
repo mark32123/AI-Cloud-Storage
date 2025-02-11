@@ -34,5 +34,16 @@
         </foreach>
 
     </insert>
+    <!--查询被删除的文件，根据accountid-->
+    <select id="selectRecycleFiles" resultType="net.xdclass.model.AccountFileDO">
+        SELECT * FROM account_file WHERE account_id = #{accountId} AND del = 1
+        <if test="fileIdList !=null">
+            and id in
+            <foreach collection="fileIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+    </select>
 
 </mapper>

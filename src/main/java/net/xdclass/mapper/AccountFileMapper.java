@@ -18,4 +18,12 @@ public interface AccountFileMapper extends BaseMapper<AccountFileDO> {
 
     void insertFileBatch(@Param("newAccountFileDOList") List<AccountFileDO> newAccountFileDOList);
 
+
+    /**
+     * 查询被删除的文件
+     * @param accountId
+     * @param fileIdList
+     * @return
+     */
+    List<AccountFileDO> selectRecycleFiles(@Param("accountId") Long accountId,@Param("fileIdList") List<Long> fileIdList);
 }
