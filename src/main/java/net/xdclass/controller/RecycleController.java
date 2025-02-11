@@ -1,6 +1,7 @@
 package net.xdclass.controller;
 
 import net.xdclass.controller.req.RecycleDelReq;
+import net.xdclass.controller.req.RecycleRestoreReq;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.interceptor.LoginInterceptor;
 import net.xdclass.service.RecycleService;
@@ -47,6 +48,20 @@ public class RecycleController {
         req.setAccountId(LoginInterceptor.threadLocal.get().getId());
 
         recycleService.delete(req);
+
+        return JsonData.buildSuccess();
+    }
+
+
+    /**
+     * 还原回收站文件
+     */
+    @PostMapping("restore")
+    public JsonData restore(@RequestBody RecycleRestoreReq req){
+
+        req.setAccountId(LoginInterceptor.threadLocal.get().getId());
+
+        recycleService.restore(req);
 
         return JsonData.buildSuccess();
     }

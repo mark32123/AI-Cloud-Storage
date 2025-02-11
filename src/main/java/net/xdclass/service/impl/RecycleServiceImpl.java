@@ -2,12 +2,14 @@ package net.xdclass.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import net.xdclass.controller.req.RecycleDelReq;
+import net.xdclass.controller.req.RecycleRestoreReq;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.enums.FolderFlagEnum;
 import net.xdclass.exception.BizException;
 import net.xdclass.mapper.AccountFileMapper;
 import net.xdclass.model.AccountFileDO;
+import net.xdclass.service.AccountFileService;
 import net.xdclass.service.RecycleService;
 import net.xdclass.util.SpringBeanUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,8 @@ public class RecycleServiceImpl implements RecycleService {
     @Autowired
     private AccountFileMapper accountFileMapper;
 
+    @Autowired
+    private AccountFileService accountFileService;
 
 
     @Override
@@ -77,6 +81,48 @@ public class RecycleServiceImpl implements RecycleService {
 
         //批量删除回收站文件
         accountFileMapper.deleteRecycleFiles(recycleFileIds);
+
+    }
+
+
+    /**
+     * 还原回收站文件
+     * * 检查是否满足：文件ID数量是否合法
+     * * 还原前的父文件和当前文件夹是否有重复名称的文件和文件夹
+     * * 判断文件是否是文件夹，文件夹的话需要递归获取里面子文件ID，才可以进行批量还原
+     * * 检查空间是否足够
+     * * 批量还原文件
+     * @param req
+     */
+    @Override
+    public void restore(RecycleRestoreReq req) {
+        //检查是否满足：文件ID数量是否合法
+        List<AccountFileDO> accountFileDOList = accountFileMapper.selectRecycleFiles(req.getAccountId(), req.getFileIds());
+        if(req.getFileIds().size() != accountFileDOList.size()){
+            throw new BizException(BizCodeEnum.FILE_RECYCLE_ILLEGAL);
+        }
+
+        //还原前的父文件和当前文件夹是否有重复名称的文件和文件夹
+        accountFileDOList.forEach(accountFileDO -> {
+            Long selectCount = accountFileService.processFileNameDuplicate(accountFileDO);
+            if(selectCount > 0){
+                 accountFileMapper.updateRecycleFileNameById(accountFileDO.getId(), accountFileDO.getFileName());
+            }
+        });
+
+        //判断文件是否是文件夹，文件夹的话需要递归获取里面子文件ID，才可以进行批量还原
+        List<AccountFileDO> allAccountFileDOList = new ArrayList<>();
+        findAllAccountFileDOWithRecur(allAccountFileDOList, accountFileDOList, false);
+        List<Long> allFileIds = allAccountFileDOList.stream().map(AccountFileDO::getId).toList();
+
+        //检查空间是否足够
+        if(!accountFileService.checkAndUpdateCapacity(req.getAccountId(),allAccountFileDOList.stream()
+                .map(accountFileDO -> accountFileDO.getFileSize() == null ? 0 : accountFileDO.getFileSize()).mapToLong(Long::valueOf).sum())){
+            throw new BizException(BizCodeEnum.FILE_STORAGE_NOT_ENOUGH);
+        }
+
+        //批量还原文件
+        accountFileMapper.restoreFiles(allFileIds);
 
     }
 

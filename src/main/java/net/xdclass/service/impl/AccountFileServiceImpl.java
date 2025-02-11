@@ -301,15 +301,20 @@ public class AccountFileServiceImpl implements AccountFileService {
         accountFileDOList.forEach(accountFileDO -> accountFileDO.setParentId(req.getTargetParentId()));
 
         //批量移动文件到目标文件夹（重复名称处理）
-        accountFileDOList.forEach(this::processFileNameDuplicate);
-
-        //更新文件或者文件夹的parent_id为目标文件夹的ID
-        for(AccountFileDO accountFileDO : accountFileDOList){
-            if(accountFileMapper.updateById(accountFileDO) < 0){
-                throw  new BizException(BizCodeEnum.FILE_BATCH_UPDATE_ERROR);
+//        accountFileDOList.forEach(this::processFileNameDuplicate);
+//
+//        //更新文件或者文件夹的parent_id为目标文件夹的ID
+//        for(AccountFileDO accountFileDO : accountFileDOList){
+//            if(accountFileMapper.updateById(accountFileDO) < 0){
+//                throw  new BizException(BizCodeEnum.FILE_BATCH_UPDATE_ERROR);
+//            }
+//        }
+        accountFileDOList.forEach(accountFileDO -> {
+            Long selectCount = processFileNameDuplicate(accountFileDO);
+            if(selectCount > 0){
+                accountFileMapper.updateById(accountFileDO);
             }
-        }
-
+        });
     }
 
 
@@ -642,7 +647,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      *  文件夹重复和文件名重复处理规则不一样
      * @param accountFileDO
      */
-    private void processFileNameDuplicate(AccountFileDO accountFileDO) {
+    public Long processFileNameDuplicate(AccountFileDO accountFileDO) {
 
         Long selectCount = accountFileMapper.selectCount(new QueryWrapper<AccountFileDO>()
                 .eq("account_id", accountFileDO.getAccountId())
@@ -661,6 +666,7 @@ public class AccountFileServiceImpl implements AccountFileService {
             }
         }
 
+        return selectCount;
 
     }
 

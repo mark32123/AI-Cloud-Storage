@@ -120,4 +120,12 @@ public interface AccountFileService {
     boolean checkAndUpdateCapacity(Long accountId, Long fileSize);
 
 
+    /**
+     * 处理文件名重复
+     * @param accountFileDO
+     * @return
+     */
+    Long processFileNameDuplicate(AccountFileDO accountFileDO);
+
+
     }

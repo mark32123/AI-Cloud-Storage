@@ -39,4 +39,18 @@ public interface AccountFileMapper extends BaseMapper<AccountFileDO> {
      * @param recycleFileIds
      */
     void deleteRecycleFiles(List<Long> recycleFileIds);
+
+    /**
+     * 更新回收站的文件名
+     * @param id
+     * @param fileName
+     * @return
+     */
+    boolean updateRecycleFileNameById(@Param("id") Long id, @Param("fileName") String fileName);
+
+    /**
+     * 批量恢复文件
+     * @param allFileIds
+     */
+    void restoreFiles(@Param("allFileIds") List<Long> allFileIds);
 }

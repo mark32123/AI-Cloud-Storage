@@ -34,6 +34,20 @@
         </foreach>
 
     </insert>
+    <!--更新回收站的文件名称-->
+    <update id="updateRecycleFileNameById">
+        UPDATE account_file SET file_name=#{fileName} WHERE id=#{id} and del=1
+    </update>
+
+
+    <!--批量还原回收站文件-->
+    <update id="restoreFiles" parameterType="java.util.List">
+        UPDATE account_file SET del=0  WHERE id IN
+        <foreach collection="allFileIds" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+
+    </update>
 
 
     <!--彻底删除文件-->
