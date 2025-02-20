@@ -36,3 +36,7 @@ minio:
   access-secret: minio_123456
   bucket-name: ai-pan
   avatar-bucket-name: avatar
+
+#百炼的key
+ai:
+  key: sk-571ca8cb9b7947a89d7d302e525c89dc
