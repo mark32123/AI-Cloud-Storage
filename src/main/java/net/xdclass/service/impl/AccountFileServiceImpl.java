@@ -670,6 +670,24 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     }
 
+
+    /**
+     * 简单搜索接口
+     * @param accountId
+     * @param search
+     * @return
+     */
+    @Override
+    public List<AccountFileDTO> search(Long accountId, String search) {
+        List<AccountFileDO> accountFileDOList = accountFileMapper.selectList(new QueryWrapper<AccountFileDO>()
+                .eq("account_id", accountId)
+                .like("file_name", search)
+                .orderByDesc("is_dir")
+                .orderByDesc("gmt_create").last("limit 30")
+        );
+        return SpringBeanUtil.copyProperties(accountFileDOList, AccountFileDTO.class);
+    }
+
     /**
      * 检查父文件是否存在
      * @param accountFileDTO

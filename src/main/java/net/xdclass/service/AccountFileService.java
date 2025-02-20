@@ -128,4 +128,11 @@ public interface AccountFileService {
     Long processFileNameDuplicate(AccountFileDO accountFileDO);
 
 
-    }
+    /**
+     * 文件搜索
+     * @param accountId
+     * @param search
+     * @return
+     */
+    List<AccountFileDTO> search(Long accountId, String search);
+}

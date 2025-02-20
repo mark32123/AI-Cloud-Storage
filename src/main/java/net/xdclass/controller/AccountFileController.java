@@ -191,4 +191,15 @@ public class AccountFileController {
     }
 
 
+    /**
+     * 根据条件查询文件列表
+     */
+    @GetMapping("search")
+    public JsonData search(@RequestParam("search")String search){
+        Long accountId = LoginInterceptor.threadLocal.get().getId();
+        List<AccountFileDTO> list = accountFileService.search(accountId,search);
+        return JsonData.buildSuccess(list);
+    }
+
+
 }
