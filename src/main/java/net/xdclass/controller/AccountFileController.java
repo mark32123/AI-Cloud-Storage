@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import net.xdclass.controller.req.*;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.FileChunkDTO;
+import net.xdclass.dto.FileDownloadDTO;
 import net.xdclass.dto.FolderTreeNodeDTO;
 import net.xdclass.interceptor.LoginInterceptor;
 import net.xdclass.service.AccountFileService;
@@ -199,6 +200,17 @@ public class AccountFileController {
         Long accountId = LoginInterceptor.threadLocal.get().getId();
         List<AccountFileDTO> list = accountFileService.search(accountId,search);
         return JsonData.buildSuccess(list);
+    }
+
+    /**
+     * 多文件下载URL获取接口
+     */
+    @PostMapping("batch_download_url")
+    public JsonData batchDownloadUrl(@RequestBody FileDownloadReq req) {
+        Long accountId = LoginInterceptor.threadLocal.get().getId();
+        req.setAccountId(accountId);
+        List<FileDownloadDTO> fileDownloadVOList = accountFileService.batchDownloadUrl(req);
+        return JsonData.buildSuccess(fileDownloadVOList);
     }
 
 

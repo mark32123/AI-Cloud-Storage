@@ -1,8 +1,10 @@
 package net.xdclass.service;
 
+import net.xdclass.controller.FileDownloadReq;
 import net.xdclass.controller.req.*;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.FileChunkDTO;
+import net.xdclass.dto.FileDownloadDTO;
 import net.xdclass.dto.FolderTreeNodeDTO;
 import net.xdclass.model.AccountFileDO;
 
@@ -135,4 +137,11 @@ public interface AccountFileService {
      * @return
      */
     List<AccountFileDTO> search(Long accountId, String search);
+
+    /**
+     * 批量获取文件下载的URL
+     * @param req
+     * @return
+     */
+    List<FileDownloadDTO> batchDownloadUrl(FileDownloadReq req);
 }

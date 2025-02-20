@@ -6,11 +6,9 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.xdclass.component.StoreEngine;
 import net.xdclass.config.MinioConfig;
+import net.xdclass.controller.FileDownloadReq;
 import net.xdclass.controller.req.*;
-import net.xdclass.dto.AccountDTO;
-import net.xdclass.dto.AccountFileDTO;
-import net.xdclass.dto.FileChunkDTO;
-import net.xdclass.dto.FolderTreeNodeDTO;
+import net.xdclass.dto.*;
 import net.xdclass.enums.BizCodeEnum;
 import net.xdclass.enums.FileTypeEnum;
 import net.xdclass.enums.FolderFlagEnum;
@@ -30,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -64,6 +63,7 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     /**
      * 获取文件列表接口
+     *
      * @param accountId
      * @param parentId
      * @return
@@ -82,6 +82,7 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     /**
      * 创建文件夹
+     *
      * @param req
      */
     @Override
@@ -102,6 +103,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      * 1、检查ID是否存在
      * 2、新旧文件名称不能一样
      * 3、同层文件名称不能一样
+     *
      * @param req
      */
     @Override
@@ -110,13 +112,13 @@ public class AccountFileServiceImpl implements AccountFileService {
         AccountFileDO accountFileDO = accountFileMapper.selectOne(new QueryWrapper<AccountFileDO>()
                 .eq("id", req.getFileId()).eq("account_id", req.getAccountId()));
 
-        if(accountFileDO == null){
-            log.error("文件不存在,{}",req);
+        if (accountFileDO == null) {
+            log.error("文件不存在,{}", req);
             throw new BizException(BizCodeEnum.FILE_NOT_EXISTS);
-        }else {
+        } else {
             //新旧文件名称不能一样
-            if(Objects.equals(accountFileDO.getFileName(), req.getNewFilename())){
-                log.error("文件名称重复,{}",req);
+            if (Objects.equals(accountFileDO.getFileName(), req.getNewFilename())) {
+                log.error("文件名称重复,{}", req);
                 throw new BizException(BizCodeEnum.FILE_RENAME_REPEAT);
             }
             //同层文件名称不能一样
@@ -124,10 +126,10 @@ public class AccountFileServiceImpl implements AccountFileService {
                     .eq("account_id", req.getAccountId())
                     .eq("parent_id", accountFileDO.getParentId())
                     .eq("file_name", req.getNewFilename()));
-            if(selectCount>0){
-                log.error("文件名称重复,{}",req);
+            if (selectCount > 0) {
+                log.error("文件名称重复,{}", req);
                 throw new BizException(BizCodeEnum.FILE_RENAME_REPEAT);
-            }else {
+            } else {
                 accountFileDO.setFileName(req.getNewFilename());
                 accountFileMapper.updateById(accountFileDO);
             }
@@ -139,6 +141,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      * 查询文件树接口 （非递归方式）
      * 1、查询用户全部文件夹
      * 2、拼装文件树
+     *
      * @param accountId
      * @return
      */
@@ -150,25 +153,25 @@ public class AccountFileServiceImpl implements AccountFileService {
                 .eq("is_dir", FolderFlagEnum.YES.getCode())
         );
 
-        if(CollectionUtils.isEmpty(folderList)){
+        if (CollectionUtils.isEmpty(folderList)) {
             return List.of();
         }
         //构建一个map， key是文件ID，value是文件对象 相当于一个数据源
         Map<Long, FolderTreeNodeDTO> folderMap = folderList.stream()
                 .collect(Collectors.toMap(AccountFileDO::getId, accountFileDO ->
-                FolderTreeNodeDTO.builder()
-                        .id(accountFileDO.getId())
-                        .parentId(accountFileDO.getParentId())
-                        .label(accountFileDO.getFileName())
-                        .children(new ArrayList<>())
-                        .build()
-        ));
+                        FolderTreeNodeDTO.builder()
+                                .id(accountFileDO.getId())
+                                .parentId(accountFileDO.getParentId())
+                                .label(accountFileDO.getFileName())
+                                .children(new ArrayList<>())
+                                .build()
+                ));
 
         //构建文件树，遍历数据源，为每个文件夹找到子文件夹
         for (FolderTreeNodeDTO node : folderMap.values()) {
             Long parentId = node.getParentId();
 
-            if(parentId!=null && folderMap.containsKey(parentId)){
+            if (parentId != null && folderMap.containsKey(parentId)) {
                 //获取父文件
                 FolderTreeNodeDTO parentNode = folderMap.get(parentId);
                 //获取父文件夹的子节点位置
@@ -193,6 +196,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      * 查询文件树接口 （非递归方式）
      * 1、查询用户全部文件夹
      * 2、拼装文件树
+     *
      * @param accountId
      * @return
      */
@@ -204,7 +208,7 @@ public class AccountFileServiceImpl implements AccountFileService {
                 .eq("is_dir", FolderFlagEnum.YES.getCode())
         );
 
-        if(CollectionUtils.isEmpty(folderList)){
+        if (CollectionUtils.isEmpty(folderList)) {
             return List.of();
         }
 
@@ -223,10 +227,10 @@ public class AccountFileServiceImpl implements AccountFileService {
 
 
         //处理拼装文件树
-        for(FolderTreeNodeDTO node : folderTreeNodeDTOList){
+        for (FolderTreeNodeDTO node : folderTreeNodeDTOList) {
             List<FolderTreeNodeDTO> children = folderMap.get(node.getId());
             //判断是否为空
-            if(!CollectionUtils.isEmpty(children)){
+            if (!CollectionUtils.isEmpty(children)) {
                 node.getChildren().addAll(children);
             }
         }
@@ -249,14 +253,14 @@ public class AccountFileServiceImpl implements AccountFileService {
     @Transactional(rollbackFor = Exception.class)
     public void fileUpload(FileUploadReq req) {
 
-        boolean storageEnough = checkAndUpdateCapacity(req.getAccountId(),req.getFileSize());
-        if(storageEnough){
+        boolean storageEnough = checkAndUpdateCapacity(req.getAccountId(), req.getFileSize());
+        if (storageEnough) {
             //上传到存储引擎
             String storeFileObjectKey = storeFile(req);
 
             //保存文件关系 + 保存账号和文件的关系
-            saveFileAndAccountFile( req,storeFileObjectKey);
-        }else {
+            saveFileAndAccountFile(req, storeFileObjectKey);
+        } else {
             throw new BizException(BizCodeEnum.FILE_STORAGE_NOT_ENOUGH);
         }
 
@@ -265,6 +269,7 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     /**
      * 检查存储空间和更新存储空间
+     *
      * @param accountId
      * @param fileSize
      * @return
@@ -272,11 +277,11 @@ public class AccountFileServiceImpl implements AccountFileService {
     public boolean checkAndUpdateCapacity(Long accountId, Long fileSize) {
         StorageDO storageDO = storageMapper.selectOne(new QueryWrapper<StorageDO>().eq("account_id", accountId));
         Long totalSize = storageDO.getTotalSize();
-        if(storageDO.getUsedSize() + fileSize <= totalSize){
+        if (storageDO.getUsedSize() + fileSize <= totalSize) {
             storageDO.setUsedSize(storageDO.getUsedSize() + fileSize);
             storageMapper.updateById(storageDO);
             return true;
-        }else {
+        } else {
             return false;
         }
     }
@@ -293,7 +298,7 @@ public class AccountFileServiceImpl implements AccountFileService {
     public void moveBatch(FileBatchReq req) {
 
         // 检查被移动的文件ID是否合法
-        List<AccountFileDO> accountFileDOList =  checkFileIdLegal(req.getFileIds(),req.getAccountId());
+        List<AccountFileDO> accountFileDOList = checkFileIdLegal(req.getFileIds(), req.getAccountId());
         //检查目标文件夹ID是否合法,包括子文件夹
         checkTargetParentIdLegal(req);
 
@@ -311,7 +316,7 @@ public class AccountFileServiceImpl implements AccountFileService {
 //        }
         accountFileDOList.forEach(accountFileDO -> {
             Long selectCount = processFileNameDuplicate(accountFileDO);
-            if(selectCount > 0){
+            if (selectCount > 0) {
                 accountFileMapper.updateById(accountFileDO);
             }
         });
@@ -324,6 +329,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      * 步骤二：判断文件是否是文件夹，文件夹的话需要递归获取里面子文件ID，然后进行批量删除
      * 步骤三：需要更新账号存储空间使用情况
      * 步骤四：批量删除账号映射文件，考虑回收站如何设计
+     *
      * @param req
      */
     @Override
@@ -358,6 +364,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      * * 执行拷贝，递归查找【差异点，ID是全新的】
      * * 计算存储空间大小，检查是否足够【差异点，空间需要检查】
      * * 存储相关记录
+     *
      * @param req
      */
     @Override
@@ -376,7 +383,7 @@ public class AccountFileServiceImpl implements AccountFileService {
         //计算存储空间大小，检查是否足够【差异点，空间需要检查】
         long totalFileSize = newAccountFileDOList.stream().filter(file -> file.getIsDir().equals(FolderFlagEnum.NO.getCode()))
                 .mapToLong(AccountFileDO::getFileSize).sum();
-        if(!checkAndUpdateCapacity(req.getAccountId(),totalFileSize)){
+        if (!checkAndUpdateCapacity(req.getAccountId(), totalFileSize)) {
             throw new BizException(BizCodeEnum.FILE_STORAGE_NOT_ENOUGH);
         }
         //存储
@@ -390,6 +397,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      * 1、检查文件是否存在
      * 2、检查空间是否足够
      * 3、建立关系
+     *
      * @param req
      * @return
      */
@@ -399,7 +407,7 @@ public class AccountFileServiceImpl implements AccountFileService {
         //检查文件是否存在
         FileDO fileDO = fileMapper.selectOne(new QueryWrapper<FileDO>().eq("identifier", req.getIdentifier()));
         //检查空间是否足够
-        if(fileDO!=null && checkAndUpdateCapacity(req.getAccountId(),fileDO.getFileSize())){
+        if (fileDO != null && checkAndUpdateCapacity(req.getAccountId(), fileDO.getFileSize())) {
             //处理文件秒传
             AccountFileDTO accountFileDTO = new AccountFileDTO();
             accountFileDTO.setAccountId(req.getAccountId());
@@ -420,6 +428,7 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     /**
      * 包括递归处理，生成新的ID
+     *
      * @param accountFileDOList
      * @param targetParentId
      * @return
@@ -427,13 +436,14 @@ public class AccountFileServiceImpl implements AccountFileService {
     public List<AccountFileDO> findBatchCopyFileWithRecur(List<AccountFileDO> accountFileDOList, Long targetParentId) {
         List<AccountFileDO> newAccountFileDOList = new ArrayList<>();
 
-        accountFileDOList.forEach(accountFileDO -> doCopyChildRecord(newAccountFileDOList,accountFileDO,targetParentId));
+        accountFileDOList.forEach(accountFileDO -> doCopyChildRecord(newAccountFileDOList, accountFileDO, targetParentId));
 
         return newAccountFileDOList;
     }
 
     /**
      * 递归处理，包括子文件夹
+     *
      * @param newAccountFileDOList
      * @param accountFileDO
      * @param targetParentId
@@ -454,26 +464,23 @@ public class AccountFileServiceImpl implements AccountFileService {
         newAccountFileDOList.add(accountFileDO);
 
         //判断是文件还是文件夹，递归处理
-        if(Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())){
+        if (Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())) {
             //继续获取子文件夹列表
-            List<AccountFileDO> childAccountFileDOList = findChildAccountFile(accountFileDO.getAccountId(),oldAccountFileId);
-            if(CollectionUtils.isEmpty(childAccountFileDOList)){
+            List<AccountFileDO> childAccountFileDOList = findChildAccountFile(accountFileDO.getAccountId(), oldAccountFileId);
+            if (CollectionUtils.isEmpty(childAccountFileDOList)) {
                 return;
             }
             //递归处理
             childAccountFileDOList
-                    .forEach(childAccountFileDO -> doCopyChildRecord(newAccountFileDOList,childAccountFileDO,accountFileDO.getId()));
+                    .forEach(childAccountFileDO -> doCopyChildRecord(newAccountFileDOList, childAccountFileDO, accountFileDO.getId()));
         }
-
-
-
-
 
 
     }
 
     /**
      * 查找文件记录，只查询下一级，不递归
+     *
      * @param accountId
      * @param parentId
      * @return
@@ -487,6 +494,7 @@ public class AccountFileServiceImpl implements AccountFileService {
      * 检查目标文件夹ID是否合法,包括子文件夹
      * 1、目标的文件ID不能是文件
      * 2、要操作的文件列表不能包括目标文件ID
+     *
      * @param req
      */
     private void checkTargetParentIdLegal(FileBatchReq req) {
@@ -495,7 +503,7 @@ public class AccountFileServiceImpl implements AccountFileService {
                 .eq("id", req.getTargetParentId())
                 .eq("is_dir", FolderFlagEnum.YES.getCode())
                 .eq("account_id", req.getAccountId()));
-        if(targetAccountFileDO == null){
+        if (targetAccountFileDO == null) {
             log.error("目标文件ID不是文件，需要是文件夹，targetParentId={}", req.getTargetParentId());
             throw new BizException(BizCodeEnum.FILE_TARGET_PARENT_ILLEGAL);
         }
@@ -513,10 +521,10 @@ public class AccountFileServiceImpl implements AccountFileService {
         //定义一个容器，存储全部文件夹，包括子文件夹
         List<AccountFileDO> allAccountFileDOList = new ArrayList<>();
         //递归查找全部子文件夹
-        findAllAccountFileDOWithRecur(allAccountFileDOList,prepareAccountFileDOList,false);
+        findAllAccountFileDOWithRecur(allAccountFileDOList, prepareAccountFileDOList, false);
 
         //判断是否在里面
-        if(allAccountFileDOList.stream().anyMatch(accountFileDO -> Objects.equals(accountFileDO.getId(), req.getTargetParentId()))){
+        if (allAccountFileDOList.stream().anyMatch(accountFileDO -> Objects.equals(accountFileDO.getId(), req.getTargetParentId()))) {
             log.error("目标文件ID不能是文件，需要是文件夹，targetParentId={}", req.getTargetParentId());
             throw new BizException(BizCodeEnum.FILE_TARGET_PARENT_ILLEGAL);
         }
@@ -525,22 +533,23 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     /**
      * 递归查找
-     * @param allAccountFileDOList 容器存储查询到到全部文件或者文件夹
+     *
+     * @param allAccountFileDOList     容器存储查询到到全部文件或者文件夹
      * @param prepareAccountFileDOList 待查询的文件和文件夹
-     * @param onlyFolder 控制是否只存储文件
+     * @param onlyFolder               控制是否只存储文件
      */
     public void findAllAccountFileDOWithRecur(List<AccountFileDO> allAccountFileDOList, List<AccountFileDO> prepareAccountFileDOList, boolean onlyFolder) {
 
-        for(AccountFileDO accountFileDO : prepareAccountFileDOList){
-            if(Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())){
+        for (AccountFileDO accountFileDO : prepareAccountFileDOList) {
+            if (Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())) {
                 //递归查找
                 List<AccountFileDO> childAccountFileDOList = accountFileMapper.selectList(new QueryWrapper<AccountFileDO>()
                         .eq("parent_id", accountFileDO.getId()));
-                findAllAccountFileDOWithRecur(allAccountFileDOList,childAccountFileDOList,onlyFolder);
+                findAllAccountFileDOWithRecur(allAccountFileDOList, childAccountFileDOList, onlyFolder);
             }
 
             //如果通过onlyFolder是true,只存储文件夹到allAccountFileDOList，否则都存储到allAccountFileDOList
-            if(!onlyFolder || Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())){
+            if (!onlyFolder || Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())) {
                 allAccountFileDOList.add(accountFileDO);
             }
         }
@@ -550,6 +559,7 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     /**
      * 检查被移动的文件ID是否合法
+     *
      * @param fileIds
      * @param accountId
      * @return
@@ -559,7 +569,7 @@ public class AccountFileServiceImpl implements AccountFileService {
         List<AccountFileDO> accountFileDOList = accountFileMapper
                 .selectList(new QueryWrapper<AccountFileDO>().in("id", fileIds).eq("account_id", accountId));
 
-        if(accountFileDOList.size()!=fileIds.size()){
+        if (accountFileDOList.size() != fileIds.size()) {
             log.error("文件ID数量不合法,ids={}", fileIds);
             throw new BizException(BizCodeEnum.FILE_BATCH_UPDATE_ERROR);
         }
@@ -570,13 +580,14 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     /**
      * 保存文件和账号文件的关系到数据库
+     *
      * @param req
      * @param storeFileObjectKey
      */
     @Override
     public void saveFileAndAccountFile(FileUploadReq req, String storeFileObjectKey) {
         //保存文件
-        FileDO fileDO = saveFile(req,storeFileObjectKey);
+        FileDO fileDO = saveFile(req, storeFileObjectKey);
 
         //保存文件账号关系
         AccountFileDTO accountFileDTO = AccountFileDTO.builder()
@@ -597,7 +608,7 @@ public class AccountFileServiceImpl implements AccountFileService {
         FileDO fileDO = new FileDO();
         fileDO.setAccountId(req.getAccountId());
         fileDO.setFileName(req.getFilename());
-        fileDO.setFileSize(req.getFile() !=null ? req.getFile().getSize():req.getFileSize());
+        fileDO.setFileSize(req.getFile() != null ? req.getFile().getSize() : req.getFileSize());
         fileDO.setFileSuffix(CommonUtil.getFileSuffix(req.getFilename()));
         fileDO.setObjectKey(storeFileObjectKey);
         fileDO.setIdentifier(req.getIdentifier());
@@ -607,6 +618,7 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     /**
      * 上传文件到存储引擎，返回存储的文件路径
+     *
      * @param req
      * @return
      */
@@ -619,7 +631,7 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     /**
      * 处理用户和文件的关系，存储文件和文件夹都是可以的
-     *
+     * <p>
      * 1、检查父文件是否存在
      * 2、检查文件是否重复
      * 3、保存相关文件关系
@@ -644,7 +656,8 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     /**
      * 处理文件是否重复,
-     *  文件夹重复和文件名重复处理规则不一样
+     * 文件夹重复和文件名重复处理规则不一样
+     *
      * @param accountFileDO
      */
     public Long processFileNameDuplicate(AccountFileDO accountFileDO) {
@@ -655,14 +668,14 @@ public class AccountFileServiceImpl implements AccountFileService {
                 .eq("is_dir", accountFileDO.getIsDir())
                 .eq("file_name", accountFileDO.getFileName()));
 
-        if(selectCount>0){
+        if (selectCount > 0) {
             //处理重复文件夹
-            if(Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())){
-                accountFileDO.setFileName(accountFileDO.getFileName()+"_"+System.currentTimeMillis());
-            }else {
+            if (Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())) {
+                accountFileDO.setFileName(accountFileDO.getFileName() + "_" + System.currentTimeMillis());
+            } else {
                 //处理重复文件名,提取文件拓展名
                 String[] split = accountFileDO.getFileName().split("\\.");
-                accountFileDO.setFileName(split[0]+"_"+System.currentTimeMillis()+"."+split[1]);
+                accountFileDO.setFileName(split[0] + "_" + System.currentTimeMillis() + "." + split[1]);
             }
         }
 
@@ -673,6 +686,7 @@ public class AccountFileServiceImpl implements AccountFileService {
 
     /**
      * 简单搜索接口
+     *
      * @param accountId
      * @param search
      * @return
@@ -689,17 +703,48 @@ public class AccountFileServiceImpl implements AccountFileService {
     }
 
     /**
+     * 批量下载url获取
+     *
+     * @param req
+     * @return
+     */
+    @Override
+    public List<FileDownloadDTO> batchDownloadUrl(FileDownloadReq req) {
+        //获取下载的文件对象，不能是文件夹
+        List<AccountFileDO> accountFileDOList = accountFileMapper.selectList(new QueryWrapper<AccountFileDO>()
+                .eq("account_id", req.getAccountId())
+                .eq("is_dir", FolderFlagEnum.NO.getCode())
+                .in("id", req.getFileIds())
+        );
+
+        List<FileDownloadDTO> list = new ArrayList<>();
+
+        for (AccountFileDO accountFileDO : accountFileDOList) {
+            String objectKey = fileMapper.selectOne(new QueryWrapper<FileDO>()
+                    .eq("id",accountFileDO.getFileId())).getObjectKey();
+            //获取下载路径
+            String downloadUrl = fileStoreEngine.getDownloadUrl(minioConfig.getBucketName(),
+                    objectKey, minioConfig.getPreSignUrlExpireTime(), TimeUnit.MILLISECONDS);
+            FileDownloadDTO downloadDTO = new FileDownloadDTO(accountFileDO.getFileName(), downloadUrl);
+            list.add(downloadDTO);
+        }
+
+        return list;
+    }
+
+    /**
      * 检查父文件是否存在
+     *
      * @param accountFileDTO
      */
     private void checkParentFileId(AccountFileDTO accountFileDTO) {
-        if(accountFileDTO.getParentId()!=0){
+        if (accountFileDTO.getParentId() != 0) {
             AccountFileDO accountFileDO = accountFileMapper.selectOne(
                     new QueryWrapper<AccountFileDO>()
                             .eq("id", accountFileDTO.getParentId())
                             .eq("account_id", accountFileDTO.getAccountId()));
 
-            if(accountFileDO == null){
+            if (accountFileDO == null) {
                 throw new BizException(BizCodeEnum.FILE_NOT_EXISTS);
             }
         }
