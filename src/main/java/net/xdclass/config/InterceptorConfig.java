@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.Iterator;
+
 /**
  * 小滴课堂,愿景：让技术不再难学
  *
@@ -24,6 +26,7 @@ public class InterceptorConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+
         registry.addInterceptor(loginInterceptor)
                 //添加拦截的路径
                 .addPathPatterns("/api/account/*/**","/api/file/*/**","/api/share/*/**","/api/recycle/*/**")

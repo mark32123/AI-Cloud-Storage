@@ -40,3 +40,19 @@ minio:
 #百炼的key
 ai:
   key: sk-571ca8cb9b7947a89d7d302e525c89dc
+
+#模型服务的配置
+stream:
+  base-url: http://localhost:8000
+  chat-stream-path: /api/chat/stream
+  timeout:
+    connect: 30s
+    response: 5m
+    read: 5m
+    write: 5m
+  pool:
+    max-connections: 100
+    max-idle-time: 5m
+    max-life-time: 10m
+    pending-acquire-timeout: 30s
+    evict-in-background: 120s
