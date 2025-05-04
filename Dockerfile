@@ -37,9 +37,7 @@ ENV JAVA_OPTS="-Xms2g -Xmx4g \
     -XX:ConcGCThreads=2 \
     -XX:+HeapDumpOnOutOfMemoryError \
     -XX:HeapDumpPath=/app/dump \
-    -XX:+PrintGCDetails \
-    -XX:+PrintGCDateStamps \
-    -Xloggc:/app/gc.log \
+    -Xlog:gc*:file=/app/gc.log \
     -XX:+UseStringDeduplication \
     -XX:+UseContainerSupport \
     -XX:MaxRAMPercentage=75.0"
