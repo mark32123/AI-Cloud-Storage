@@ -13,7 +13,10 @@ COPY src ./src
 RUN mvn clean package -DskipTests -T 1C \
     -Dmaven.test.skip=true \
     -Dmaven.compile.fork=true \
-    -Dmaven.javadoc.skip=true
+    -Dmaven.javadoc.skip=true \
+    -Dmaven.compiler.source=21 \
+    -Dmaven.compiler.target=21 \
+    -Dmaven.compiler.forceJavacCompilerUse=true
 
 # 运行阶段
 FROM eclipse-temurin:21-jre-jammy
@@ -44,10 +47,6 @@ ENV JAVA_OPTS="-Xms2g -Xmx4g \
 
 # 暴露端口
 EXPOSE 8080
-
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # 启动命令
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"] 
