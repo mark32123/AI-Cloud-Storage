@@ -5,8 +5,18 @@ WORKDIR /app
 # 复制所有文件
 COPY . .
 
-# 构建应用
-RUN mvn clean package -DskipTests
+# 构建应用，跳过测试并优化构建参数
+RUN mvn clean package \
+    -DskipTests=true \
+    -Dmaven.test.skip=true \
+    -Dmaven.javadoc.skip=true \
+    -Dmaven.compile.fork=true \
+    -Dmaven.compiler.source=21 \
+    -Dmaven.compiler.target=21 \
+    -Dmaven.compiler.forceJavacCompilerUse=true \
+    -Dmaven.compiler.showWarnings=true \
+    -Dmaven.compiler.showDeprecation=true \
+    -Dmaven.compiler.annotationProcessorPaths=lombok:org.projectlombok:lombok:1.18.30
 
 # 运行阶段
 FROM eclipse-temurin:21-jre-jammy
