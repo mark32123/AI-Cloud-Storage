@@ -1,6 +1,4 @@
 package net.xdclass.controller.req;
-
-import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -12,7 +10,6 @@ import lombok.Data;
  * @Version 1.0
  **/
 @Data
-@Builder
 public class AccountRegisterReq {
 
     /**

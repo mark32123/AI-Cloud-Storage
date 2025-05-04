@@ -2,21 +2,11 @@
 FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
 
-# 首先只复制pom文件，利用Maven的依赖缓存
-COPY pom.xml .
-# 下载依赖到本地缓存，使用并行下载
-RUN mvn dependency:go-offline -B -Dmaven.repo.local=/root/.m2/repository
+# 复制所有文件
+COPY . .
 
-# 复制源代码
-COPY src ./src
-# 构建应用，使用并行构建和跳过测试，优化构建参数
-RUN mvn clean package -DskipTests -T 1C \
-    -Dmaven.test.skip=true \
-    -Dmaven.compile.fork=true \
-    -Dmaven.javadoc.skip=true \
-    -Dmaven.compiler.source=21 \
-    -Dmaven.compiler.target=21 \
-    -Dmaven.compiler.forceJavacCompilerUse=true
+# 构建应用
+RUN mvn clean package -DskipTests
 
 # 运行阶段
 FROM eclipse-temurin:21-jre-jammy
