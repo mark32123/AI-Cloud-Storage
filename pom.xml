@@ -26,6 +26,46 @@
 		<lombok.version>1.18.30</lombok.version>
 	</properties>
 
+	<!-- 配置Maven仓库 -->
+	<repositories>
+		<repository>
+			<id>aliyun</id>
+			<name>aliyun</name>
+			<url>https://maven.aliyun.com/repository/public</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>aliyun-spring</id>
+			<name>aliyun-spring</name>
+			<url>https://maven.aliyun.com/repository/spring</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
+	<!-- 配置插件仓库 -->
+	<pluginRepositories>
+		<pluginRepository>
+			<id>aliyun-plugin</id>
+			<name>aliyun-plugin</name>
+			<url>https://maven.aliyun.com/repository/public</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+	</pluginRepositories>
 
 	<dependencies>
 		<!-- Spring Boot Web依赖 -->
