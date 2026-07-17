@@ -8,15 +8,15 @@ spring:
   # db
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://39.108.115.28:3306/dcloud_aipan?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://8.134.108.159/dcloud_pan?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
-    password: xdclass.net168
+    password: 123456
   #redis
   data:
     redis:
-      host: 39.108.115.28
+      host: 8.134.108.159
       port: 6379
-      password: abc123456
+      password: 123456
 
 # mybatis-plus??
 mybatis-plus:
@@ -31,7 +31,7 @@ mybatis-plus:
 
 # minio
 minio:
-  endpoint: http://39.108.115.28:9000
+  endpoint: http://8.134.108.159:9000
   access-key: minio_root
   access-secret: minio_123456
   bucket-name: ai-pan
@@ -39,11 +39,11 @@ minio:
 
 #百炼的key
 ai:
-  key: sk-571ca8cb9b7947a89d7d302e525c89dc
+  key: sk-4e351b92cab64a8ab5d7e07ce1ed70c4
 
 #模型服务的配置
 stream:
-  base-url: http://localhost:8000
+  base-url: http://8.134.108.159:8000
   chat-stream-path: /api/chat/stream
   timeout:
     connect: 30s

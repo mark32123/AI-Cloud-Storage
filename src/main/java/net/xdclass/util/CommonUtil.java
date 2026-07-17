@@ -43,6 +43,9 @@ public class CommonUtil {
      * 根据文件名称获取文件后缀
      */
     public static String getFileSuffix(String fileName) {
+        if (StrUtil.isBlank(fileName) || !fileName.contains(".")) {
+            return "";  // 或返回默认后缀
+        }
         return fileName.substring(fileName.lastIndexOf(".") + 1);
     }
 
