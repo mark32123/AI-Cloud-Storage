@@ -166,7 +166,6 @@ public class AccountFileServiceImpl implements AccountFileService {
                                 .children(new ArrayList<>())
                                 .build()
                 ));
-
         //构建文件树，遍历数据源，为每个文件夹找到子文件夹
         for (FolderTreeNodeDTO node : folderMap.values()) {
             Long parentId = node.getParentId();
@@ -212,6 +211,7 @@ public class AccountFileServiceImpl implements AccountFileService {
             return List.of();
         }
 
+        //类型转换，将AccountFileDO转换为FolderTreeNodeDTO
         List<FolderTreeNodeDTO> folderTreeNodeDTOList = folderList.stream().map(file -> {
             return FolderTreeNodeDTO.builder()
                     .id(file.getId())
@@ -541,8 +541,8 @@ public class AccountFileServiceImpl implements AccountFileService {
     public void findAllAccountFileDOWithRecur(List<AccountFileDO> allAccountFileDOList, List<AccountFileDO> prepareAccountFileDOList, boolean onlyFolder) {
 
         for (AccountFileDO accountFileDO : prepareAccountFileDOList) {
+            //如果是文件夹，递归查找
             if (Objects.equals(accountFileDO.getIsDir(), FolderFlagEnum.YES.getCode())) {
-                //递归查找
                 List<AccountFileDO> childAccountFileDOList = accountFileMapper.selectList(new QueryWrapper<AccountFileDO>()
                         .eq("parent_id", accountFileDO.getId()));
                 findAllAccountFileDOWithRecur(allAccountFileDOList, childAccountFileDOList, onlyFolder);
@@ -750,4 +750,6 @@ public class AccountFileServiceImpl implements AccountFileService {
         }
 
     }
+
+
 }

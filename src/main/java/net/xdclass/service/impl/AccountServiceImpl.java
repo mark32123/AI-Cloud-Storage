@@ -32,6 +32,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+import static net.xdclass.enums.BizCodeEnum.ACCOUNT_UNREGISTER;
+
 /**
  * 小滴课堂,愿景：让技术不再难学
  *
@@ -115,9 +117,12 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountDTO login(AccountLoginReq req) {
 
+        //log.info("---------------req--------------:{}",req);
         //处理密码
         String digestAsHex = DigestUtils.md5DigestAsHex((AccountConfig.ACCOUNT_SALT + req.getPassword()).getBytes());
+        //System.out.println(digestAsHex);
         AccountDO accountDO = accountMapper.selectOne(new QueryWrapper<AccountDO>().eq("phone", req.getPhone()).eq("password", digestAsHex));
+
         if(accountDO == null){
             throw new BizException(BizCodeEnum.ACCOUNT_PWD_ERROR);
         }
@@ -129,18 +134,34 @@ public class AccountServiceImpl implements AccountService {
 
         //账号详情
         AccountDO accountDO = accountMapper.selectById(id);
+
+        if (accountDO == null) {
+            throw new BizException(ACCOUNT_UNREGISTER);
+        }
+
         AccountDTO accountDTO = SpringBeanUtil.copyProperties(accountDO, AccountDTO.class);
+
 
         //获取存储信息
         StorageDO storageDO = storageMapper.selectOne(new QueryWrapper<StorageDO>().eq("account_id", id));
+
         accountDTO.setStorageDTO(SpringBeanUtil.copyProperties(storageDO, StorageDTO.class));
 
         //获取根文件信息
         AccountFileDO accountFileDO = accountFileMapper.selectOne(new QueryWrapper<AccountFileDO>()
                 .eq("account_id", id).eq("parent_id", AccountConfig.ROOT_PARENT_ID));
-        accountDTO.setRootFileId(accountFileDO.getId());
-        accountDTO.setRootFileName(accountFileDO.getFileName());
+
+        if(accountFileDO == null) {
+            accountDTO.setRootFileId(0L);
+            accountDTO.setRootFileName("根目录");
+            log.info("用户 {} 还没有创建任何文件，根文件信息为空", id);
+        } else {
+            accountDTO.setRootFileId(accountFileDO.getId());
+            accountDTO.setRootFileName(accountFileDO.getFileName());
+        }
 
         return accountDTO;
     }
+
+
 }

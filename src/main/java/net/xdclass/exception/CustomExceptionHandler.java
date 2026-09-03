@@ -5,6 +5,7 @@ import net.xdclass.util.JsonData;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * 小滴课堂,愿景：让技术不再难学
@@ -17,6 +18,14 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @ControllerAdvice
 @Slf4j
 public class CustomExceptionHandler {
+
+    @ExceptionHandler(value = MethodArgumentTypeMismatchException.class)
+    @ResponseBody
+    public JsonData handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException e) {
+        log.error("[参数类型不匹配异常] 参数名: {}, 期望类型: {}, 实际值: {}", 
+            e.getName(), e.getRequiredType().getSimpleName(), e.getValue());
+        return JsonData.buildError("参数类型错误: " + e.getName() + " 应该是 " + e.getRequiredType().getSimpleName() + " 类型");
+    }
 
     @ExceptionHandler(value = Exception.class)
     @ResponseBody

@@ -32,7 +32,7 @@ class AmazonS3ClientTests {
 	 */
 	@Test
 	public void testBucketExists() {
-		boolean bucketExist = amazonS3Client.doesBucketExist("ai-pan1");
+		boolean bucketExist = amazonS3Client.doesBucketExist("ai-pan");
 		log.info("bucket是否存在:{}",bucketExist);
 	}
 
@@ -41,7 +41,7 @@ class AmazonS3ClientTests {
 	 */
 	@Test
 	public void testCreateBucket() {
-		String bucketName = "ai-pan1";
+		String bucketName = "ai-pan";
 		Bucket bucket = amazonS3Client.createBucket(bucketName);
 		log.info("bucket:{}",bucket);
 	}
@@ -51,7 +51,7 @@ class AmazonS3ClientTests {
 	 */
 	@Test
 	public void testDeleteBucket() {
-		String bucketName = "ai-pan1";
+		String bucketName = "ai-pan";
 		amazonS3Client.deleteBucket(bucketName);
 	}
 
@@ -70,7 +70,7 @@ class AmazonS3ClientTests {
 	 */
 	@Test
 	public void testGetBucket() {
-		String bucketName = "ai-pan1";
+		String bucketName = "ai-pan";
 		Optional<Bucket> optionalBucket = amazonS3Client.listBuckets().stream().filter(bucket -> bucketName.equals(bucket.getName())).findFirst();
 		if (optionalBucket.isPresent()) {
 			log.info("bucket:{}",optionalBucket.get());

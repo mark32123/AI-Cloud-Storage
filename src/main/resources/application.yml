@@ -5,18 +5,25 @@ spring:
   application:
     name: dcloud-aipan
 
+  # 文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+
   # db
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://8.134.108.159/dcloud_pan?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/db_aipan?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
     password: 123456
   #redis
   data:
     redis:
-      host: 8.134.108.159
+      host: 8.138.149.225
       port: 6379
-      password: 123456
+      password: redis
 
 # mybatis-plus??
 mybatis-plus:
@@ -31,10 +38,10 @@ mybatis-plus:
 
 # minio
 minio:
-  endpoint: http://8.134.108.159:9000
-  access-key: minio_root
-  access-secret: minio_123456
-  bucket-name: ai-pan
+  endpoint: http://8.138.149.225:9000
+  access-key: access_key
+  access-secret: secret_key
+  bucket-name: aipan
   avatar-bucket-name: avatar
 
 #百炼的key
@@ -43,7 +50,7 @@ ai:
 
 #模型服务的配置
 stream:
-  base-url: http://8.134.108.159:8000
+  base-url: http://8.138.149.225:8000
   chat-stream-path: /api/chat/stream
   timeout:
     connect: 30s

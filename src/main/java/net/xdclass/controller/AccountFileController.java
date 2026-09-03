@@ -3,6 +3,7 @@ package net.xdclass.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import net.xdclass.controller.req.*;
 import net.xdclass.dto.AccountFileDTO;
 import net.xdclass.dto.FileChunkDTO;
@@ -26,6 +27,7 @@ import java.util.List;
  * @Remark 有问题直接联系我，源码-笔记-技术交流群,官网 https://xdclass.net
  * @Version 1.0
  **/
+@Slf4j
 @RestController
 @RequestMapping("/api/file/v1")
 @Tag(name = "文件管理接口", description = "提供文件和文件夹的管理功能")
@@ -43,11 +45,12 @@ public class AccountFileController {
     @GetMapping("list")
     @Operation(summary = "查询文件列表", description = "根据父文件夹ID查询文件列表")
     public JsonData list(
-            @Parameter(description = "父文件夹ID", required = true, example = "1") @RequestParam(value = "parent_id") Long parentId) {
+            @Parameter(description = "父文件夹ID，0表示根目录", example = "0") @RequestParam(value = "parent_id", required = false, defaultValue = "0") Long parentId) {
         Long accountId = LoginInterceptor.threadLocal.get().getId();
         List<AccountFileDTO> list = accountFileService.listFile(accountId, parentId);
         return JsonData.buildSuccess(list);
     }
+
 
     /**
      * 创建文件夹
@@ -58,6 +61,7 @@ public class AccountFileController {
             @Parameter(description = "文件夹创建请求对象", required = true) @RequestBody FolderCreateReq req) {
         Long accountId = LoginInterceptor.threadLocal.get().getId();
         req.setAccountId(accountId);
+        log.info("createFolder req:{}", req);
         accountFileService.createFolder(req);
         return JsonData.buildSuccess();
     }
@@ -106,6 +110,7 @@ public class AccountFileController {
     @Operation(summary = "文件批量移动", description = "文件批量移动")
     public JsonData moveBatch(
             @Parameter(description = "文件批量移动请求对象", required = true) @RequestBody FileBatchReq req) {
+
         req.setAccountId(LoginInterceptor.threadLocal.get().getId());
         accountFileService.moveBatch(req);
         return JsonData.buildSuccess();
