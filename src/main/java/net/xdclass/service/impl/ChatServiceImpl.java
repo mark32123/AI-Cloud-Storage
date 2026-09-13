@@ -50,7 +50,7 @@ public class ChatServiceImpl implements ChatService {
                 .model(Generation.Models.QWEN_TURBO)
                 .messages(Arrays.asList(systemMsg, userMsg)) //上下文
                 .resultFormat(GenerationParam.ResultFormat.MESSAGE) //配置返回格式
-                .temperature(0.7f) //配置随机性的温度
+                .temperature(0.3f) //配置随机性的温度
                 .apiKey(aiKey)
                 .build();
 

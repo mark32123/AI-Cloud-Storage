@@ -149,7 +149,9 @@ public class AccountServiceImpl implements AccountService {
 
         //获取根文件信息
         AccountFileDO accountFileDO = accountFileMapper.selectOne(new QueryWrapper<AccountFileDO>()
-                .eq("account_id", id).eq("parent_id", AccountConfig.ROOT_PARENT_ID));
+                .eq("account_id", id).eq("parent_id", AccountConfig.ROOT_PARENT_ID)
+                .eq("del", 0));
+
 
         if(accountFileDO == null) {
             accountDTO.setRootFileId(0L);

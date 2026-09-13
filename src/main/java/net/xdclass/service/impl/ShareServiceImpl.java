@@ -99,7 +99,7 @@ public class ShareServiceImpl implements ShareService {
         ShareDO shareDO = ShareDO.builder()
                 .id(shareId)
                 .shareName(req.getShareName())
-                .shareType(ShareTypeEnum.valueOf(req.getShareType()).name())
+                .shareType(ShareTypeEnum.fromValue(req.getShareType()).name())
                 .shareDayType(dayType)
                 .shareDay(shareDays)
                 .shareUrl(shareUrl)

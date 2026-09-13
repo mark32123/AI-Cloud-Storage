@@ -39,14 +39,14 @@ mybatis-plus:
 # minio
 minio:
   endpoint: http://8.138.149.225:9000
-  access-key: access_key
-  access-secret: secret_key
+  access-key: vsscfUevOywI2axfotsB
+  access-secret: HlG6fh6kfRrhPxm9opXPi5SNyrybkgr9lSeiYoyk
   bucket-name: aipan
   avatar-bucket-name: avatar
 
-#百炼的key
+#ds的key
 ai:
-  key: sk-4e351b92cab64a8ab5d7e07ce1ed70c4
+  key: sk-dbaffdea4c3542859392c1dcfbe897fd
 
 #模型服务的配置
 stream:
